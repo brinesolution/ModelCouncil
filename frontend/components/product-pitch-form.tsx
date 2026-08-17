@@ -4,7 +4,11 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { runSimulation } from "@/lib/api";
-import type { DialogueMode, PopulationMode } from "@/types/simulation";
+import {
+  WEB_ROUND_LIMITS,
+  type DialogueMode,
+  type PopulationMode,
+} from "@/types/simulation";
 
 const DEFAULT_PITCH =
   "An AI-powered fitness coach that creates personalized workout plans, nutrition guidance, and progress tracking for one monthly subscription.";
@@ -27,6 +31,17 @@ export function ProductPitchForm() {
   const [seed, setSeed] = useState(42);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const roundLimit = WEB_ROUND_LIMITS[populationMode];
+
+  function handlePopulationChange(nextMode: PopulationMode) {
+    setPopulationMode(nextMode);
+    setRounds((current) => Math.min(current, WEB_ROUND_LIMITS[nextMode]));
+  }
+
+  function handleRoundsChange(nextValue: number) {
+    setRounds(Math.min(Math.max(nextValue, 1), roundLimit));
+  }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -80,7 +95,11 @@ export function ProductPitchForm() {
 
           <div className="field">
             <label htmlFor="population">Population</label>
-            <select id="population" value={populationMode} onChange={(event) => setPopulationMode(event.target.value as PopulationMode)}>
+            <select
+              id="population"
+              value={populationMode}
+              onChange={(event) => handlePopulationChange(event.target.value as PopulationMode)}
+            >
               <option value="small">Small — 250 agents</option>
               <option value="standard">Standard — 1,000 agents</option>
               <option value="large">Large — 5,000 agents</option>
@@ -103,7 +122,15 @@ export function ProductPitchForm() {
 
           <div className="field">
             <label htmlFor="rounds">Rounds</label>
-            <input id="rounds" type="number" min="1" max="200" value={rounds} onChange={(event) => setRounds(Number(event.target.value))} />
+            <input
+              id="rounds"
+              type="number"
+              min="1"
+              max={roundLimit}
+              value={rounds}
+              onChange={(event) => handleRoundsChange(Number(event.target.value))}
+            />
+            <span className="muted">Maximum for this population: {roundLimit} rounds.</span>
           </div>
 
           <div className="field">
@@ -130,6 +157,7 @@ export function ProductPitchForm() {
         <div className="metricList">
           <div className="metric"><span>Population</span><strong>{POPULATION_LABELS[populationMode]}</strong></div>
           <div className="metric"><span>Rounds</span><strong>{rounds}</strong></div>
+          <div className="metric"><span>Round limit</span><strong>{roundLimit}</strong></div>
           <div className="metric"><span>Simulated time</span><strong>{rounds * 5} min</strong></div>
           <div className="metric"><span>Max chats / agent / round</span><strong>2</strong></div>
           <div className="metric"><span>Potential initiators</span><strong>20%</strong></div>
