@@ -1,260 +1,319 @@
 # ModelCouncil — Master Context for Codex and Contributors
 
-**Project root:** `E:\model counsel`  
-**Current phase:** Initialization / web-first architecture foundation  
-**Project version:** `0.1.0` foundation  
-**Primary purpose of this file:** Read this before making architecture-level changes.
+**Project root after local checkout:** `E:\model counsel`  
+**Repository:** `brinesolution/ModelCouncil`  
+**Current development branch:** `phase-1-vertical-slice`  
+**Current phase:** Phase 1 web simulation vertical slice implemented and under merge-safety verification  
+**Project version:** `0.1.x` pre-release  
+**Purpose:** Read this file before architecture-level changes.
 
 ---
 
 ## 1. What ModelCouncil is
 
-ModelCouncil is a web-based synthetic consumer society and product-intelligence simulator. A user enters a product and product pitch in the website. The system creates a heterogeneous synthetic consumer population from structured traits, builds a weighted similarity/social network, schedules realistic neighbour conversations, optionally renders selected conversations with an LLM, aggregates the resulting evidence synchronously, and tracks how product beliefs, confidence, trust, knowledge, overall opinion, and purchase intent evolve through time.
+ModelCouncil is a web-based synthetic consumer society and product-intelligence simulator. A user enters a product and pitch in the website. The system creates a heterogeneous synthetic consumer population from structured trait libraries, generates baseline product beliefs, builds a weighted K-nearest-neighbour social graph, schedules a limited number of realistic neighbour interactions, aggregates those interactions synchronously, and tracks how topic beliefs, confidence, knowledge, overall opinion, and purchase intent evolve through simulated time.
 
-The portfolio-level visual idea is:
+Portfolio-level concept:
 
-> **Watch a product idea enter a synthetic society, move through conversations, mutate slightly as people reinterpret it, and produce measurable changes in consumer behaviour.**
+> **Watch a product idea enter a synthetic society, move through conversations, mutate through individual interpretation, and produce measurable changes in consumer behaviour.**
 
-The system is for synthetic experimentation and hypothesis generation. It must not claim that simulated percentages are statistically representative predictions of real populations unless later calibrated and validated against real data.
-
----
-
-## 2. How the idea evolved
-
-The project began as an AI-agents analytics idea for population simulation and opinion analysis. It was then narrowed toward **consumer behaviour and product analysis**: a user supplies a product/pitch and the system studies how different synthetic consumers react.
-
-The population design then became explicit rather than LLM-invented. Consumer traits will be maintained in large Excel trait libraries containing demographic, emotional, economic, decision-making, social, technology, personality, and consumer-behaviour variations. Agents are sampled from those distributions with compatibility/dependency rules and controlled random variation.
-
-The next major change was social interaction. Consumers are represented as normalized trait vectors. Weighted K-nearest neighbours create likely social/behavioural neighbourhoods. Agents do not automatically talk to all K neighbours. A separate scheduler chooses a small number of actual conversations each round.
-
-Opinion is allowed to travel through the network while changing slightly. A message can be interpreted, partially accepted, rejected, strengthened, weakened, or retold differently. This enables word-of-mouth, social proof, opinion clusters, echo chambers, influencers, misinformation experiments, corrections, and product adoption dynamics in later phases.
-
-The language layer was then added. Consumers should be viewable on a map/graph and selected active pairs should visibly converse, initially in English / ordinary Indian English. Hindi, Hinglish, and additional Indian-language/code-switching profiles are later extensions. The language should be natural without forced stereotypes or repetitive slang.
-
-The important architecture decision is that **agents are stateful individuals, but they are not separate permanent LLM processes**. Agent identity is stored in Python state: traits, beliefs, confidence, knowledge, relationships, memories, and history. A shared LLM conversation service temporarily gives selected agents language.
-
-Finally, the project was changed from a local-first prototype to a **web-first implementation from initialization**. The simulator remains a framework-independent Python package, but the project begins with a Next.js website and FastAPI backend so every feature can eventually be viewed from the browser.
+All current outputs are synthetic experiments. They must not be described as statistically validated predictions of real consumers unless a later phase calibrates the system against real empirical data.
 
 ---
 
-## 3. Core invariants
+## 2. Current implemented pipeline
 
-These are architectural rules, not suggestions.
+The `phase-1-vertical-slice` branch implements this complete browser/API/simulation path:
 
-1. **The simulation engine is authoritative for numerical state.**
-2. **The LLM gives language/semantic interpretation, not final state values.**
-3. **K defines candidate neighbours, not number of conversations per round.**
-4. **Normal agents talk to only a small number of people per round.**
-5. **All default round updates are synchronous.** Every conversation in round `t` reads the same start-of-round snapshot, then effects are aggregated once before committing `S(t+1)`.
-6. **Conversation effects are topic-specific.** Price discussion should not directly overwrite privacy or quality beliefs.
-7. **Overall opinion is derived from topic beliefs.**
-8. **Purchase intent is derived from product need/value/trust/price/etc.; it is not the same as sentiment.**
-9. **Randomness is seeded and reproducible where practical.**
-10. **All normalized state is bounded.**
-11. **Facts and opinions are different data types.** Unsupported LLM-generated product facts cannot silently become truth.
-12. **Simulation and web frameworks remain decoupled.** `simulation/` must be runnable/testable without FastAPI or Next.js.
-13. **Secrets stay server-side.** DeepSeek keys must never reach browser JavaScript.
-14. **Synthetic outputs are labelled as synthetic.**
+```text
+Next.js product-pitch form
+        ↓
+FastAPI POST /api/v1/simulations/run
+        ↓
+Excel-backed TraitRepository
+        ↓
+Seeded synthetic population
+        ↓
+Baseline product beliefs
+        ↓
+Weighted KNN graph + weak ties
+        ↓
+Capacity-limited conversation scheduler
+        ↓
+Deterministic background semantic conversations
+        ↓
+TopicEvidence for both participants
+        ↓
+Synchronous round aggregation
+        ↓
+One AgentStateDelta commit per agent
+        ↓
+Derived overall opinion + purchase intent
+        ↓
+Timeline / sampled network / selected conversation DTOs
+        ↓
+Browser results screen
+```
+
+Phase 1 intentionally does **not** require a live LLM call. The DeepSeek provider exists behind the LLM abstraction for the next phase.
 
 ---
 
-## 4. Initial population presets
+## 3. Architectural invariants
 
-Three user-facing presets are defined:
+These are hard project rules.
 
-| mode | population | base K | normal max conversations / agent / round | potential initiators / round | weak ties | simulated minutes / round |
+1. **The simulation engine owns numerical state.**
+2. **The LLM gives selected interactions language/semantic interpretation; it does not directly set final opinion or purchase intent.**
+3. **An agent is a persistent stateful individual, not a permanent LLM process.**
+4. **K defines candidate neighbours, not conversations per round.**
+5. **Normal agents have limited conversation capacity.** Current maximum is two scheduled conversations per agent per round.
+6. **Default round updates are synchronous.** Every conversation in round `t` reads the same frozen start-of-round state. Effects are aggregated, then `S(t+1)` is committed once.
+7. **Conversation effects are topic-specific.** Price discussion does not directly overwrite privacy or quality.
+8. **Overall opinion is derived from topic beliefs.**
+9. **Purchase intent is a separate derived state.** Liking a product does not imply ability/willingness to buy it.
+10. **Randomness is explicitly seeded where practical.**
+11. **Normalized state is bounded.**
+12. **Facts and opinions are distinct.** Future LLM-created unsupported product facts cannot silently become truth.
+13. **`simulation/` stays framework-independent.** It must not import FastAPI or Next.js.
+14. **Secrets stay server-side.** DeepSeek keys must never enter browser bundles or Git.
+15. **Synthetic outputs are labelled synthetic.**
+
+---
+
+## 4. Population and web-run presets
+
+| Mode | Population | Base K | Initiator rate | Max conversations / agent / round | Weak ties | Minutes / round |
 |---|---:|---:|---:|---:|---:|---:|
-| Small | 250 | 10 | 2 | 20% | 5% | 5 |
-| Standard | 1,000 | 14 | 2 | 20% | 5% | 5 |
-| Large | 5,000 | 18 | 2 | 20% | 5% | 5 |
+| Small | 250 | 10 | 20% | 2 | 5% | 5 |
+| Standard | 1,000 | 14 | 20% | 2 | 5% | 5 |
+| Large | 5,000 | 18 | 20% | 2 | 5% | 5 |
 
-**Standard (1,000)** is the recommended normal mode.
+**Standard (1,000)** is the normal recommended mode.
 
-Population size and dialogue-generation cost are separate settings. Later dialogue modes are:
+Because the current web API executes simulations synchronously, request-level round budgets are intentionally stricter:
 
-- `economy` — most interactions mathematical, language generated only selectively;
-- `balanced` — selected meaningful/visible conversations get language;
-- `full` — every actual scheduled pair can receive generated dialogue; intended mainly for small/medium populations.
+- Small: maximum 100 web rounds
+- Standard: maximum 50 web rounds
+- Large: maximum 20 web rounds
+
+The default 20-round scenario remains valid for all three modes. Larger research experiments should later use an asynchronous worker/job system rather than loosening synchronous HTTP limits.
 
 ---
 
-## 5. Agent structure
+## 5. Trait system
 
-An agent contains several kinds of state.
+Current trait source directory:
 
-### Relatively stable identity
+```text
+data/traits/
+├── archetypes.xlsx
+├── compatibility_rules.xlsx
+├── consumer_behaviour.xlsx
+├── decision_styles.xlsx
+├── demographics.xlsx
+├── economic_traits.xlsx
+├── emotions.xlsx
+├── occupations.xlsx
+├── personality.xlsx
+├── social_behaviour.xlsx
+├── technology.xlsx
+├── catalog.source.json
+├── catalog.manifest.json
+└── README.md
+```
 
-- demographics;
-- occupation/income;
-- personality;
-- emotional tendencies;
+`catalog.source.json` is the canonical reproducible seed definition for the initial workbooks. `scripts/generate_trait_workbooks.py` generates the `.xlsx` files. `catalog.manifest.json` records size/SHA-256 integrity metadata for each workbook.
+
+Regression tests verify:
+
+- every declared workbook physically exists;
+- no undeclared workbook is silently added;
+- workbook bytes match manifest hashes/sizes;
+- the actual Excel files load through `ExcelTraitRepository`;
+- required categories are present;
+- category probabilities normalize correctly.
+
+The workbooks are editable model assumptions, not empirical truth. Stable `key` values should be preserved when labels/descriptions/weights are edited.
+
+---
+
+## 6. Agent state
+
+### Stable/slow identity
+
+Current `AgentTraits` includes:
+
 - sociability;
-- risk tolerance;
-- stubbornness;
-- influence power;
 - price sensitivity;
 - technology adoption;
-- brand loyalty;
+- emotionality;
+- logicality;
+- stubbornness;
+- influence power;
 - product need;
-- communication/language profile.
+- risk tolerance;
+- brand loyalty.
+
+`ConsumerAgent` additionally includes agent ID, age, occupation, normalized income score, primary language, and locale.
 
 ### Dynamic product state
 
-- topic beliefs: price, usefulness, quality, trust, novelty, privacy, later more dimensions;
+Current `AgentState` includes:
+
+- `ProductBeliefs`: price, usefulness, quality, trust, novelty, privacy;
 - overall opinion;
 - confidence;
-- product knowledge;
-- product salience;
+- knowledge;
 - purchase intent;
-- later emotions, product lifecycle stage, satisfaction, memories, and factual beliefs.
+- product salience.
 
-Most behavioural numeric traits use `0..1`. Opinion dimensions use `-1..1`.
+Opinion dimensions use `-1..1`. Most other normalized variables use `0..1`.
 
----
-
-## 6. Trait system
-
-The planned editable source is `data/traits/*.xlsx`.
-
-Expected categories include:
-
-- demographics;
-- age groups;
-- occupations;
-- income;
-- education;
-- personality;
-- emotions;
-- decision styles;
-- economic traits;
-- consumer behaviour;
-- social behaviour;
-- technology;
-- interests;
-- lifestyle;
-- relationships;
-- archetypes;
-- compatibility rules.
-
-Do not independently randomize every trait. Use dependency chains and correlations. Examples:
-
-- age influences possible education/occupation;
-- occupation/age influence income distribution;
-- income influences but does not dictate price sensitivity;
-- stubbornness tends to reduce susceptibility;
-- novelty seeking tends to increase early adoption;
-- privacy concern can reduce AI trust for relevant products.
-
-Noise should preserve diversity and avoid deterministic stereotypes.
-
-The current `simulation/population/generator.py` is a bootstrap generator only. It exists to establish contracts/tests before the Excel loader is implemented.
+Future state can add explicit memories, emotions, product lifecycle stage, factual beliefs, satisfaction, and richer relationship types without changing the Phase 1 architecture.
 
 ---
 
-## 7. Social network model
+## 7. Population generation
 
-Consumers are normalized into feature vectors. Weighted distance is used to build a KNN graph. Not every trait must appear in distance, and product categories may later alter feature weights.
+`simulation/population/generator.py` supports seeded generation using either:
 
-The graph contains candidate interaction edges with fields such as:
+- `ExcelTraitRepository` from `data/traits/*.xlsx`; or
+- bootstrap distributions when no repository is supplied (test/development fallback).
 
-- similarity;
-- relationship strength;
-- trust;
-- weak-tie flag;
-- last interaction round;
-- interaction count.
+The backend uses the Excel repository when real workbooks are present. API responses expose `trait_source` so the UI/debugger can see whether a run used `excel` or `bootstrap` traits.
 
-Pure KNN can create closed bubbles, so the base graph adds a small weak-tie fraction (currently 5%).
-
-Similarity and trust are not identical. Two dissimilar people may have a strong trusted relationship.
-
-The candidate graph should remain mostly stable during MVP. Later versions may evolve relationship strengths and edges slowly.
+Correlation/compatibility behavior belongs in `simulation/population/correlations.py`, not scattered through API or UI code.
 
 ---
 
-## 8. Conversation scheduling
+## 8. KNN social graph
 
-`K` is not conversation count.
+`simulation/network/knn_graph.py` creates a weighted similarity graph over selected normalized agent features.
 
-For each round:
+Important interpretation:
 
-1. freeze start-of-round state;
-2. inspect eligible social edges;
-3. apply cooldown to recently used pairs;
-4. select a seeded, weighted subset of potential initiators (20% by default) using sociability and product salience;
-5. score eligible neighbours using similarity, relationship, salience, sociability and seeded jitter;
-6. perform capacity-aware matching;
-7. limit ordinary agents to at most two conversations in the round;
-8. create unique conversation IDs;
-9. route selected interactions to mathematical or language conversation modes.
+> KNN represents candidate social/behavioural neighbourhoods, not literal guaranteed friendships and not conversations with all K people.
 
-Do not always select the nearest neighbour. Weighted randomness prevents one pair from talking continuously.
+The graph also receives a small number of weak ties. Weak ties allow cross-cluster propagation and reduce deterministic echo chambers.
 
-Influencers should later use broadcast/reach mechanics rather than thousands of one-to-one chats.
+Relationship strength, trust, similarity, weak-tie status, and interaction recency are graph-edge state.
+
+Do not rebuild the entire social graph every round in the current model.
 
 ---
 
-## 9. Round update model
+## 9. Conversation scheduling
 
-Never update an agent after each conversation in sequence by default. That creates last-speaker/iteration-order bias.
+`simulation/conversation/scheduler.py` is separate from graph construction.
 
-Instead:
+A typical round:
+
+1. Determine potential initiators using sociability/product salience and the preset initiator rate.
+2. Examine eligible graph neighbours.
+3. Apply cooldown/availability/capacity rules.
+4. Weight candidates instead of always choosing the single closest neighbour.
+5. Schedule unique unordered pairs.
+6. Do not exceed the per-agent conversation capacity.
+
+This prevents unrealistic behavior where all K neighbours talk simultaneously or one high-similarity node is selected by everyone.
+
+---
+
+## 10. Phase 1 semantic conversations
+
+`simulation/conversation/background_engine.py` generates deterministic semantic interaction payloads. These interactions have topics/stances/argument strengths but do not need natural-language text.
+
+`ConversationRouter` currently keeps Phase 1 on the background engine. Live LLM promotion is intentionally reserved for Phase 2.
+
+The user-facing dialogue modes (`economy`, `balanced`, `full`) remain part of the API contract for future routing/cost control, but Phase 1 does not yet spend DeepSeek credits per interaction.
+
+---
+
+## 11. Opinion update model
+
+Do **not** update agents sequentially as each conversation executes.
+
+Phase 1 uses:
 
 ```text
-S(t) snapshot
-   -> conversation A
-   -> conversation B
-   -> conversation C
-   -> topic evidence ledger
-   -> credibility/receptivity weighting
-   -> bounded-confidence filtering
-   -> saturating aggregation
-   -> one combined topic-belief update
-   -> update confidence/knowledge/trust/memory
-   -> derive overall opinion
-   -> derive purchase intent
-   -> commit S(t+1)
+freeze S(t)
+   ↓
+all scheduled conversations read S(t)
+   ↓
+produce TopicEvidence
+   ↓
+aggregate by listener/topic
+   ↓
+credibility × receptivity × bounded confidence
+   ↓
+saturating influence + small seeded noise
+   ↓
+AgentStateDelta
+   ↓
+one commit → S(t+1)
 ```
 
-Multiple agreeing conversations should increase pressure but with diminishing returns. Conflicting evidence may move opinion only slightly while reducing confidence.
-
-A normal topic update is capped (current initial target: approximately `0.20` per round) and includes only small seeded behavioural noise.
+The aggregator accounts for trust, relationship strength, speaker confidence/influence, listener stubbornness/confidence, message relevance, and bounded-confidence acceptance. Influence saturates so many repeated conversations are not linearly unlimited.
 
 ---
 
-## 10. Language conversations
+## 12. Product evaluation and purchase intent
 
-Every consumer is an individual agent, but there is **one shared conversation service/provider layer**.
+`simulation/product/baseline_evaluation.py` creates initial topic beliefs from product knowledge plus consumer traits.
 
-Example:
+`simulation/behaviour/purchase.py` separately derives:
 
-```text
-Agent A state + Agent B state + product facts + recent memories
-     -> shared conversation engine
-     -> short natural dialogue
-     -> structured semantic topic effects
-     -> Python simulation aggregation
-```
+- overall product opinion;
+- purchase intent.
 
-Initial language policy:
-
-- English;
-- natural Indian English where appropriate;
-- no forced slang/stereotypes;
-- typically 2–5 short utterances;
-- personalities/communication styles remain stable;
-- not every conversation changes an opinion;
-- consumers may partially agree, disagree, remain uncertain, or change only one belief dimension.
-
-Later languages can include Hindi, Hinglish, Tamil and other profiles, but should be introduced through explicit agent language/communication settings.
+A consumer may like a product while remaining unlikely to buy it because of price, need, risk, or other constraints.
 
 ---
 
-## 11. LLM architecture
+## 13. Web/API implementation
 
-Primary intended provider for current implementation: DeepSeek Flash through a generic `LLMProvider` interface.
+### Backend
 
-Current root `.env` variables include:
+FastAPI routes:
+
+- `GET /api/v1/health`
+- `POST /api/v1/simulations/preview`
+- `POST /api/v1/simulations/run`
+
+Run responses include:
+
+- synthetic label;
+- product/configuration;
+- preset;
+- summary;
+- timeline;
+- bounded sampled network DTO;
+- selected conversation metadata;
+- trait source.
+
+Routes should remain thin. Domain work belongs in `simulation/`; orchestration/serialization belongs in backend services.
+
+### Frontend
+
+Next.js App Router currently provides:
+
+- landing page;
+- `/simulate` pitch/config form;
+- `/simulations/result` result view;
+- summary cards;
+- code-native opinion timeline;
+- bounded network preview.
+
+The current network view is a preview, not the final animated conversation map.
+
+---
+
+## 14. DeepSeek boundary
+
+The current provider is `simulation/llm/deepseek.py`.
+
+Server-side configuration comes from the root `.env` through `backend/app/core/config.py`:
 
 ```text
 DEEPSEEK_API_KEY=
@@ -263,223 +322,92 @@ DEEPSEEK_MODEL=deepseek-v4-flash
 DEEPSEEK_THINKING=disabled
 ```
 
-`simulation/llm/deepseek.py` performs server-side JSON requests. `simulation/llm/mock.py` exists for offline deterministic development and tests.
+Never commit the real key. `.env` and frontend local env files are Git-ignored.
 
-Do not spread DeepSeek-specific calls across the simulator. Future providers should be interchangeable.
-
-Use LLMs for:
-
-- natural dialogue;
-- pitch interpretation;
-- objections;
-- semantic retelling;
-- explanations;
-- final human-readable analysis.
-
-Do not use them as the sole mechanism for:
-
-- KNN;
-- neighbour choice;
-- influence magnitude;
-- numerical state transition;
-- population generation;
-- purchase probability;
-- graph analytics.
+Phase 2 should use the LLM selectively for visible/important dialogue, message interpretation, objections, semantic retelling, and aggregate explanations. The numerical engine remains authoritative.
 
 ---
 
-## 12. Future input ingestion
+## 15. Testing and CI
 
-Initial version accepts text product/pitch input.
+CI runs two independent jobs:
 
-Later web versions should allow:
+### Python
 
-- product photos;
-- screenshots;
-- PDFs;
-- DOCX/other product documents;
-- landing-page captures;
-- marketing images.
+- Python 3.13
+- install `backend/requirements.txt`
+- run all `tests/` with pytest
 
-Those inputs should pass through an ingestion pipeline:
+### Frontend
 
-```text
-upload
- -> type validation
- -> text/image/document extraction
- -> product fact extraction
- -> normalized ProductKnowledge record
- -> user review/correction
- -> simulation
-```
+- Node 22
+- install exactly from `frontend/package-lock.json` using `npm ci`
+- `npm run lint`
+- `npm run build`
 
-The simulation should consume normalized product knowledge, not raw files directly.
+The CI workflow is read-only (`contents: read`). A temporary write-enabled workbook-generation workflow was used only to repair the interrupted trait-data commit and was removed before merge readiness.
 
-LLM-generated claims must be checked against product knowledge. If unsupported claims are allowed in a misinformation experiment, they must be explicitly marked unverified/rumour state.
+Important regression areas include:
 
----
-
-## 13. Web architecture
-
-Current stack:
-
-- Next.js 16 App Router + TypeScript frontend;
-- FastAPI backend;
-- Python simulation core;
-- DeepSeek via server-side httpx;
-- PostgreSQL/Supabase planned later for persistence/auth;
-- GitHub planned as source of truth;
-- Vercel planned for frontend;
-- backend container host planned separately.
-
-Current web route:
-
-- `/` — product overview;
-- `/simulate` — product-pitch + simulation configuration form.
-
-Current API route:
-
-- `GET /api/v1/health`;
-- `POST /api/v1/simulations/preview`.
-
-The preview endpoint is deliberately honest: it returns configuration, not fake finished analytics.
+- seeded population reproducibility;
+- trait correlation/compatibility;
+- workbook integrity/loading;
+- KNN/scheduler capacity;
+- deterministic background conversations;
+- order-independent synchronous aggregation;
+- engine replay/reproducibility;
+- API result/timeline behavior;
+- safe synchronous web-run budgets.
 
 ---
 
-## 14. Planned visualization
+## 16. Security/current limitations
 
-A major future interface is an interactive social map/graph.
+Before public deployment, add authentication, user/project isolation, rate limiting, asynchronous job execution for heavy runs, persistence, and stronger abuse controls.
 
-Potential encoding:
+Current synchronous workload bounds are a safety guard, not a substitute for production rate limiting.
 
-- node = consumer;
-- node position = graph layout or behavioural projection;
-- node colour = opinion;
-- node size = influence;
-- edge thickness = relationship/similarity;
-- active conversation edge = highlighted/animated;
-- click agent = inspect traits/state/history;
-- click active/past edge = inspect conversation transcript and before/after effects.
+No real `.env`, `.venv`, `node_modules`, or `.next` artifacts should ever be tracked.
 
-Large simulations should use level-of-detail/clustering rather than blindly rendering every edge.
-
-Another signature feature is simulation replay: a timeline slider changes network colours, active conversations, segments, and aggregate metrics across saved checkpoints.
+Product ideas may be confidential. Future external LLM usage must be transparent/configurable and must avoid unnecessary logging of user product content.
 
 ---
 
-## 15. Analytics direction
+## 17. Phase 2 direction
 
-Minimum later metrics:
+Next major development stage:
 
-- mean/median opinion;
-- opinion variance;
-- positive/neutral/negative share;
-- purchase-intent distribution;
-- trust;
-- price acceptance;
-- usefulness;
-- segment response;
-- opinion over time;
-- graph centrality/community metrics;
-- influential/bridge agents;
-- local consensus;
-- polarization/convergence measures;
-- top objections and features;
-- event impact.
+1. selective DeepSeek-backed language conversations;
+2. structured transcript schema;
+3. agent conversation/memory summaries;
+4. visible active conversation edges on the network map;
+5. click-to-view conversation transcript;
+6. map replay by simulation round;
+7. cost-aware `economy` / `balanced` / `full` dialogue routing;
+8. stronger segment/product analytics;
+9. later product image/document ingestion into normalized product knowledge.
 
-A/B comparisons must use the same population seed unless the experiment explicitly studies population variance.
+Multilingual support should start with English / ordinary Indian English. Hindi, Hinglish, and additional Indian-language/code-switch profiles are later extensions.
 
 ---
 
-## 16. Development sequence
+## 18. Development rules for future Codex sessions
 
-The project is web-first in presentation but simulation-first in domain correctness.
-
-### Initialization — current
-
-- repository structure;
-- root secret/config contract;
-- Next.js shell;
-- FastAPI shell;
-- product-pitch form;
-- population presets;
-- bootstrap population;
-- KNN graph;
-- conversation scheduler;
-- synchronous opinion aggregation;
-- purchase-intent derivation;
-- LLM abstraction;
-- tests;
-- documentation.
-
-### Phase 1
-
-- Excel trait loader + validation;
-- product model normalization;
-- baseline product evaluation;
-- complete round engine;
-- semantic interaction ledger;
-- first analytics payload;
-- web simulation run/status/results pages.
-
-### Phase 2
-
-- real DeepSeek dialogue generation;
-- batch conversations;
-- conversation cache;
-- memory summaries;
-- active graph visualization;
-- transcript inspector;
-- simulation replay.
-
-### Phase 3
-
-- persistence/auth;
-- projects/products/saved experiments;
-- A/B pitch comparisons;
-- events/influencers/reviews;
-- richer behavioural modules.
-
-### Later
-
-- image/document ingestion;
-- multilingual/code-switching agents;
-- misinformation/correction;
-- dynamic networks;
-- product lifecycle;
-- empirical calibration/research extensions.
+- Read `context.md`, `idea.md`, `project coding.md`, and relevant ADRs first.
+- Do not replace the simulation with an LLM-only persona system.
+- Do not make one permanent LLM process per consumer.
+- Preserve seeded reproducibility.
+- Add tests before behavioral changes.
+- Keep simulation code independent of FastAPI/Next.js.
+- Keep provider-specific LLM code behind the provider/router layer.
+- Do not silently loosen synchronous web workload limits.
+- Do not treat Excel assumptions as empirically validated distributions.
+- Update master documents when a phase changes.
 
 ---
 
-## 17. Known edge cases that the code must respect
+## 19. Branch handoff
 
-- `K <= N-1` for custom small populations;
-- isolated agents may legitimately have no conversation;
-- no pair duplicated in the same round;
-- agent conversation capacity enforced;
-- pair cooldown prevents repetitive chat loops;
-- synchronous updates avoid order dependence;
-- disagreement may reduce confidence instead of flipping opinion;
-- repeated argument novelty should later decay while social proof can still rise;
-- categorical facts must not be numerically averaged;
-- all LLM JSON must be validated;
-- LLM failure must fall back to mathematical interaction rather than killing the run;
-- one high-influence agent cannot affect everyone unless reach/trust/network exposure permit it;
-- relationship state changes slower than product beliefs;
-- graph should not rebuild completely each round;
-- large graph UI requires clustering/LOD;
-- unsupported product facts cannot silently propagate;
-- identical seeds/config should reproduce deterministic behavior.
+`phase-1-vertical-slice` is intended to be reviewed and manually merged by the project owner. Do not automatically merge it into `main` without explicit instruction.
 
----
-
-## 18. Current source-of-truth files
-
-- `idea.md` — full idea/history/roadmap;
-- `project coding.md` — exact code structure and responsibilities;
-- `context.md` — this condensed architecture contract;
-- `docs/architecture/` — focused architecture notes;
-- `docs/decisions/` — architecture decision records;
-- `tests/` — executable behavioural invariants.
-
-When a future decision materially changes architecture, update these documents instead of leaving contradictory old assumptions in place.
+After merge, the user will pull the merged `main` branch to `E:\model counsel` and continue local development from there.
