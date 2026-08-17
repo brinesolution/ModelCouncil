@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "generated_on": "2026-08-17",
+  "generator": "ModelCouncil Phase 1 artifact-tool workbook pass",
+  "workbooks": [
+    {"file":"archetypes.xlsx","sha256":"955059d41c426dd8ac4d5ead5096b7942b3c9d1cdc62a22dac611bd5839ad9ba","size_bytes":5879},
+    {"file":"compatibility_rules.xlsx","sha256":"f60b0bd4a72f796101e7e8e05b999f199d480c44d01341079da0c8f84b873031","size_bytes":5714},
+    {"file":"consumer_behaviour.xlsx","sha256":"0066cc10306cd8ed2c7ae3d42dc245d1b1a7041afcf8b43afc83974fe9fdd122","size_bytes":5713},
+    {"file":"decision_styles.xlsx","sha256":"4b92e88ddf8c3f6513f891a3e4524c449a01bf9d292eda76df0a400441efbf6f","size_bytes":5637},
+    {"file":"demographics.xlsx","sha256":"8a62f9097a176714fddaad58a03581ace30012233d91f2f686faa47fabb94a28","size_bytes":5556},
+    {"file":"economic_traits.xlsx","sha256":"76a90d5c0ae2e9f6e0a4b095ff6cc84662a1a87f781b8bdd6cd8421cbd7e1ac3","size_bytes":5568},
+    {"file":"emotions.xlsx","sha256":"01b85ad33133e4d47b2c99959fdf5f1551b114ca9792d5f2ff4e8dfc2c4fdda7","size_bytes":5706},
+    {"file":"occupations.xlsx","sha256":"fa3ec6d72f1e4982ab63956d332672c50967e1c91ae525549495de78a3838a70","size_bytes":5764},
+    {"file":"personality.xlsx","sha256":"0b9add13d04c39fc25abb72e76e1e732afc29b0f70ae6aba41f15570c57928d8","size_bytes":5683},
+    {"file":"social_behaviour.xlsx","sha256":"a5545b930c0516ceba9ac2f6bcf80d5b0b50ef7e218e138970fbc7ca47100fcb","size_bytes":5737},
+    {"file":"technology.xlsx","sha256":"8878b9243aa9920e772aba2316295ba5823313c3699d2fcad75d0874043aad4f","size_bytes":5527}
+  ]
+}
