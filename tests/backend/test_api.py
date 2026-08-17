@@ -35,6 +35,27 @@ def test_simulation_preview_returns_standard_preset() -> None:
     assert body["preset"]["base_k"] == 14
 
 
+def test_large_web_run_budget_rejects_more_than_twenty_rounds() -> None:
+    response = client.post(
+        "/api/v1/simulations/preview",
+        json={
+            "product": {
+                "name": "AI Fitness Coach",
+                "category": "Fitness Technology",
+                "pitch": "Personalized workouts, nutrition guidance, and progress tracking.",
+                "price": 999,
+                "currency": "INR",
+            },
+            "population_mode": "large",
+            "dialogue_mode": "economy",
+            "rounds": 21,
+            "seed": 42,
+        },
+    )
+
+    assert response.status_code == 422
+
+
 def test_run_simulation_returns_timeline_and_synthetic_label() -> None:
     response = client.post(
         "/api/v1/simulations/run",
