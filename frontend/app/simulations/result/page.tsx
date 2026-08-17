@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 
 import "../../results.css";
 import { NetworkPreview } from "@/features/simulation/network-preview";
@@ -10,26 +10,24 @@ import { ResultsSummary } from "@/features/simulation/results-summary";
 import type { SimulationRunResponse } from "@/types/results";
 
 const STORAGE_KEY = "modelcouncil:last-simulation";
+const noopSubscribe = () => () => undefined;
+const getServerSnapshot = () => null;
+const getClientSnapshot = () => window.sessionStorage.getItem(STORAGE_KEY);
 
 export default function SimulationResultPage() {
-  const [result, setResult] = useState<SimulationRunResponse | null>(null);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    const stored = window.sessionStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setResult(JSON.parse(stored) as SimulationRunResponse);
-      } catch {
-        window.sessionStorage.removeItem(STORAGE_KEY);
-      }
+  const rawResult = useSyncExternalStore(
+    noopSubscribe,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
+  const result = useMemo(() => {
+    if (!rawResult) return null;
+    try {
+      return JSON.parse(rawResult) as SimulationRunResponse;
+    } catch {
+      return null;
     }
-    setLoaded(true);
-  }, []);
-
-  if (!loaded) {
-    return <main className="pageShell"><p className="muted">Loading simulation result…</p></main>;
-  }
+  }, [rawResult]);
 
   if (!result) {
     return (
