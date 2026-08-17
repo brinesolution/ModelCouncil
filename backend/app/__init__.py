@@ -1,0 +1,1 @@
+"""ModelCouncil FastAPI application package."""
