@@ -1,0 +1,198 @@
+.pageShell {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 42px 0 96px;
+}
+
+.resultsPage {
+  display: grid;
+  gap: 22px;
+}
+
+.resultNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.textLink {
+  font-weight: 650;
+}
+
+.resultSection {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: var(--shadow);
+  padding: 28px;
+}
+
+.resultSection h1,
+.resultSection h2,
+.resultSection p {
+  margin-top: 0;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--line);
+}
+
+.summaryMetric {
+  display: flex;
+  min-height: 112px;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 18px;
+  background: var(--surface);
+}
+
+.summaryMetric span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.summaryMetric strong {
+  font-size: 1.55rem;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.resultDisclaimer {
+  margin: 18px 0 0 !important;
+}
+
+.chartLegend {
+  display: flex;
+  gap: 16px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.chartLegend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.legendLine {
+  width: 22px;
+  height: 3px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.opinionLine { background: #343b49; }
+.purchaseLine { background: #7a8190; }
+
+.chartFrame,
+.networkFrame {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fbfbfc;
+}
+
+.chartFrame svg,
+.networkFrame svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.chartAxis {
+  stroke: #d9dde4;
+  stroke-width: 1;
+}
+
+.timelineOpinion,
+.timelinePurchase {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.timelineOpinion { stroke: #343b49; }
+.timelinePurchase { stroke: #8b93a2; }
+
+.chartLabel {
+  fill: #747b87;
+  font-size: 11px;
+}
+
+.networkEdge {
+  stroke: #cfd4dc;
+  stroke-width: 1.15;
+  opacity: 0.72;
+}
+
+.networkEdgeWeak {
+  stroke-dasharray: 4 5;
+  opacity: 0.4;
+}
+
+.networkNode {
+  stroke: #ffffff;
+  stroke-width: 2;
+}
+
+.networkPositive { fill: #4d6570; }
+.networkNeutral { fill: #9ca3af; }
+.networkNegative { fill: #876b6b; }
+
+.conversationList {
+  display: grid;
+}
+
+.conversationRow {
+  display: grid;
+  grid-template-columns: 90px minmax(220px, 0.6fr) 1fr;
+  gap: 18px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.conversationRow:last-child {
+  border-bottom: 0;
+}
+
+.emptyResult {
+  max-width: 720px;
+  margin: 70px auto 0;
+}
+
+.linkButton {
+  margin-top: 12px;
+}
+
+@media (max-width: 760px) {
+  .resultNav,
+  .resultHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .summaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .conversationRow {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+}
+
+@media (max-width: 480px) {
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+}
