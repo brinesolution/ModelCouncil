@@ -1,6 +1,12 @@
 export type PopulationMode = "small" | "standard" | "large";
 export type DialogueMode = "economy" | "balanced" | "full";
 
+export const WEB_ROUND_LIMITS: Record<PopulationMode, number> = {
+  small: 100,
+  standard: 50,
+  large: 20,
+};
+
 export interface SimulationPreviewRequest {
   product: {
     name: string;

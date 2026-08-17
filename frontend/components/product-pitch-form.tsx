@@ -1,18 +1,22 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 
-import { previewSimulation } from "@/lib/api";
-import type {
-  DialogueMode,
-  PopulationMode,
-  SimulationPreviewResponse,
-} from "@/types/simulation";
+import { runSimulation } from "@/lib/api";
+import type { DialogueMode, PopulationMode } from "@/types/simulation";
 
 const DEFAULT_PITCH =
   "An AI-powered fitness coach that creates personalized workout plans, nutrition guidance, and progress tracking for one monthly subscription.";
 
+const POPULATION_LABELS: Record<PopulationMode, string> = {
+  small: "250 agents · K 10",
+  standard: "1,000 agents · K 14",
+  large: "5,000 agents · K 18",
+};
+
 export function ProductPitchForm() {
+  const router = useRouter();
   const [name, setName] = useState("AI Fitness Coach");
   const [category, setCategory] = useState("Fitness Technology");
   const [pitch, setPitch] = useState(DEFAULT_PITCH);
@@ -21,7 +25,6 @@ export function ProductPitchForm() {
   const [dialogueMode, setDialogueMode] = useState<DialogueMode>("balanced");
   const [rounds, setRounds] = useState(20);
   const [seed, setSeed] = useState(42);
-  const [result, setResult] = useState<SimulationPreviewResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -31,7 +34,7 @@ export function ProductPitchForm() {
     setLoading(true);
 
     try {
-      const data = await previewSimulation({
+      const data = await runSimulation({
         product: {
           name,
           category,
@@ -44,9 +47,12 @@ export function ProductPitchForm() {
         rounds,
         seed,
       });
-      setResult(data);
+      window.sessionStorage.setItem(
+        "modelcouncil:last-simulation",
+        JSON.stringify(data),
+      );
+      router.push("/simulations/result");
     } catch (caught) {
-      setResult(null);
       setError(caught instanceof Error ? caught.message : "Unable to reach ModelCouncil API.");
     } finally {
       setLoading(false);
@@ -108,39 +114,32 @@ export function ProductPitchForm() {
 
         <div className="formFooter">
           <span className={`status ${error ? "error" : ""}`}>
-            {error ?? "This initialization call does not spend LLM credits."}
+            {error ?? "Phase 1 runs deterministic semantic conversations and spends no LLM credits."}
           </span>
           <button className="button" type="submit" disabled={loading}>
-            {loading ? "Preparing…" : "Preview simulation"}
+            {loading ? "Running society…" : "Run simulation"}
           </button>
         </div>
       </form>
 
-      <aside className="metricPanel" aria-live="polite">
+      <aside className="metricPanel">
         <div className="resultHeader">
-          <h2>Simulation plan</h2>
-          <span className="muted">v0.1</span>
+          <h2>Run configuration</h2>
+          <span className="muted">Phase 1</span>
         </div>
-        {result ? (
-          <>
-            <div className="metricList">
-              <div className="metric"><span>Population</span><strong>{result.preset.population_size.toLocaleString()}</strong></div>
-              <div className="metric"><span>Base K</span><strong>{result.preset.base_k}</strong></div>
-              <div className="metric"><span>Max chats / agent / round</span><strong>{result.preset.max_conversations_per_round}</strong></div>
-              <div className="metric"><span>Potential initiators / round</span><strong>{Math.round(result.preset.initiator_rate * 100)}%</strong></div>
-              <div className="metric"><span>Weak ties</span><strong>{Math.round(result.preset.weak_tie_rate * 100)}%</strong></div>
-              <div className="metric"><span>Round duration</span><strong>{result.preset.simulated_minutes_per_round} min</strong></div>
-              <div className="metric"><span>Rounds</span><strong>{result.rounds}</strong></div>
-              <div className="metric"><span>Dialogue mode</span><strong>{result.dialogue_mode}</strong></div>
-              <div className="metric"><span>Seed</span><strong>{result.seed}</strong></div>
-            </div>
-            <p className="muted">{result.note}</p>
-          </>
-        ) : (
-          <p className="emptyState">
-            Enter a product pitch and choose a population mode. The API will return the exact simulation preset that the later graph, conversation, and opinion engines will consume.
-          </p>
-        )}
+        <div className="metricList">
+          <div className="metric"><span>Population</span><strong>{POPULATION_LABELS[populationMode]}</strong></div>
+          <div className="metric"><span>Rounds</span><strong>{rounds}</strong></div>
+          <div className="metric"><span>Simulated time</span><strong>{rounds * 5} min</strong></div>
+          <div className="metric"><span>Max chats / agent / round</span><strong>2</strong></div>
+          <div className="metric"><span>Potential initiators</span><strong>20%</strong></div>
+          <div className="metric"><span>Weak social ties</span><strong>5%</strong></div>
+          <div className="metric"><span>Dialogue setting</span><strong>{dialogueMode}</strong></div>
+          <div className="metric"><span>Seed</span><strong>{seed}</strong></div>
+        </div>
+        <p className="muted">
+          Dialogue mode is preserved in the experiment contract. In Phase 1, all interactions use the deterministic semantic engine; DeepSeek rendering is layered on after this simulation path is verified.
+        </p>
       </aside>
     </div>
   );

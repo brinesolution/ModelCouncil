@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0",
+  "generated_on": "2026-08-17",
+  "generator": "scripts/generate_trait_workbooks.py",
+  "workbooks": [
+    {
+      "file": "archetypes.xlsx",
+      "sha256": "bbae845e0e62876d933ebaf1611483c29570b05a0d5c85ac0f77e4de0d427f87",
+      "size_bytes": 6955
+    },
+    {
+      "file": "compatibility_rules.xlsx",
+      "sha256": "6b7664c99be476414d0eb3e4abc88ec5ac74e578740c20ce6a93da009710b41b",
+      "size_bytes": 6763
+    },
+    {
+      "file": "consumer_behaviour.xlsx",
+      "sha256": "3823d666703a4f01f83be031f5166e0bd06de21ce620f0349f30ad1aa6fdd02b",
+      "size_bytes": 6773
+    },
+    {
+      "file": "decision_styles.xlsx",
+      "sha256": "cb19bfe61b86ef61d1d7d974730aafbac7a8231537c5600e0dcea57b102db80d",
+      "size_bytes": 6698
+    },
+    {
+      "file": "demographics.xlsx",
+      "sha256": "7f1e7a46f74af6a11f15eb8c2fe2644568c2c77b806d9cc5e59fa7fae1fb572a",
+      "size_bytes": 6599
+    },
+    {
+      "file": "economic_traits.xlsx",
+      "sha256": "caf5499779dcfadb9bf0349cf5e65cc5b01789fb4280fca9276828a4e6c7bb25",
+      "size_bytes": 6617
+    },
+    {
+      "file": "emotions.xlsx",
+      "sha256": "5fda5a2f40f624960ea4fed705934f860eae4f5cf00324596a7cd1df924f7c1e",
+      "size_bytes": 6765
+    },
+    {
+      "file": "occupations.xlsx",
+      "sha256": "873b708e82fbb4d0bd6f682b6cafd5200e0fb0f8ef7715bfdef67eba3bdf17f7",
+      "size_bytes": 6816
+    },
+    {
+      "file": "personality.xlsx",
+      "sha256": "6f7652d754945cc8a47f0745ad1a75504bc547d73494dde9450bd86364591b83",
+      "size_bytes": 6681
+    },
+    {
+      "file": "social_behaviour.xlsx",
+      "sha256": "9a5abbd1e5dcd9ffb97944bc972419f0ffda6a4636ae1caa22efe902b6031a10",
+      "size_bytes": 6787
+    },
+    {
+      "file": "technology.xlsx",
+      "sha256": "fe371c3405e4dcb561e9027d2765a61baf1d9861020649c3e9712d16926f7b18",
+      "size_bytes": 6581
+    }
+  ]
+}
