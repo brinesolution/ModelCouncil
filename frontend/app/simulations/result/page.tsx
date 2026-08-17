@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import "../../results.css";
 import { NetworkPreview } from "@/features/simulation/network-preview";
 import { OpinionTimeline } from "@/features/simulation/opinion-timeline";
 import { ResultsSummary } from "@/features/simulation/results-summary";
