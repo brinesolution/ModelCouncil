@@ -1,6 +1,6 @@
 from enum import StrEnum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class PopulationMode(StrEnum):
@@ -15,6 +15,13 @@ class DialogueMode(StrEnum):
     full = "full"
 
 
+_WEB_ROUND_LIMITS: dict[PopulationMode, int] = {
+    PopulationMode.small: 100,
+    PopulationMode.standard: 50,
+    PopulationMode.large: 20,
+}
+
+
 class ProductPitchInput(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     category: str = Field(default="General", max_length=120)
@@ -27,8 +34,18 @@ class SimulationPreviewRequest(BaseModel):
     product: ProductPitchInput
     population_mode: PopulationMode = PopulationMode.standard
     dialogue_mode: DialogueMode = DialogueMode.balanced
-    rounds: int = Field(default=20, ge=1, le=200)
+    rounds: int = Field(default=20, ge=1, le=100)
     seed: int = Field(default=42, ge=0, le=2_147_483_647)
+
+    @model_validator(mode="after")
+    def enforce_synchronous_web_budget(self) -> "SimulationPreviewRequest":
+        max_rounds = _WEB_ROUND_LIMITS[self.population_mode]
+        if self.rounds > max_rounds:
+            raise ValueError(
+                f"{self.population_mode.value} population is limited to "
+                f"{max_rounds} synchronous web rounds"
+            )
+        return self
 
 
 class SimulationPresetView(BaseModel):
