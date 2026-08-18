@@ -1,157 +1,305 @@
 # ModelCouncil
 
-ModelCouncil is a web-first synthetic consumer-society simulator for testing product ideas, pricing, positioning, and conversation dynamics against a reproducible population of simulated consumers.
+ModelCouncil is a synthetic consumer-society simulator for evaluating product ideas, pricing, positioning, and market narratives before investing in real-world research or launch activity.
 
-The current build combines structured consumer traits, deterministic product interpretation, weighted social networks, bounded opinion propagation, purchase-intent modelling, replayable conversations, optional LLM language rendering, and browser-visible analytics. Numerical simulation state remains Python-owned; language models can render conversations but cannot directly rewrite beliefs, product semantics, final opinion, or purchase intent.
+Instead of asking a single model for an opinion, ModelCouncil creates a population of persistent synthetic consumers with different traits, needs, budgets, attitudes, decision styles, and social relationships. Those consumers evaluate a product individually, interact through a social network, influence one another over simulated time, and produce aggregate behavioural and opinion signals that can be explored through a web interface.
 
-> ModelCouncil produces **synthetic simulation outputs**. It is not an empirically calibrated market forecast, survey replacement, or claim about real consumer behaviour.
+> ModelCouncil is a simulation and experimentation system. Its outputs are synthetic and should not be treated as statistically validated forecasts of real-world consumers unless the model is separately calibrated against empirical data.
 
-## Current build
+---
 
-A normal browser run currently follows this pipeline:
+## Vision
 
-```text
-Product / pitch / price / billing cadence
-        |
-        v
-Next.js simulation form
-        |
-        v
-FastAPI validation + preset/Advanced configuration resolution
-        |
-        v
-Excel-backed synthetic population
-        |
-        +--> explicit trait activation + compatibility rules
-        |
-        v
-Deterministic product taxonomy + semantic evidence
-        |
-        +--> usefulness / quality / trust / novelty
-        +--> privacy / complexity / recurring-cost signals
-        +--> reliability / serviceability / safety / data-practice risk
-        +--> cancellation friction + reference-price context
-        |
-        v
-Consumer-product fit + price context + baseline beliefs
-        |
-        v
-Weighted KNN social graph + weak ties
-        |
-        v
-Capacity-limited conversation scheduling
-        |
-        v
-Semantic conversations + synchronous topic evidence aggregation
-        |
-        v
-Bounded belief updates + purchase intent
-        |
-        +--> deterministic readable dialogue
-        +--> optional DeepSeek rendering for selected conversations
-        +--> optional Full Live rendering through DeepSeek or Ollama Local
-        |
-        v
-Timeline + replay + network + conversation ledger + analytics
-        |
-        v
-Local append-only run audit under logs/model-runs/
-```
+The goal of ModelCouncil is to make product and market experimentation more dynamic than a conventional prompt, persona list, or static survey simulation.
 
-## Implemented capabilities
+A product should be able to enter a synthetic society where:
 
-### Synthetic population
+- different consumers interpret the same product differently;
+- product need, affordability, risk tolerance, trust, privacy concerns, and adoption tendencies affect individual reactions;
+- consumers exist inside a social network rather than as isolated personas;
+- conversations spread information, objections, enthusiasm, and uncertainty;
+- opinions evolve over multiple simulated rounds;
+- purchase intent can diverge from general product liking;
+- important conversations can be inspected and replayed;
+- optional language models can turn already-computed semantic interactions into natural dialogue;
+- the complete run can be audited and reproduced.
 
-- Three built-in population presets: 250, 1,000, and 5,000 consumers.
-- Deterministic seeded generation from editable Excel trait workbooks.
-- Explicit activation manifest distinguishes active, derived, and provenance-only workbook fields.
-- Compatibility rules and soft priors shape generated consumers without making every trait independent.
-- Consumer context includes demographic, economic, decision-style, behavioural, emotional, social, occupation, and technology dimensions.
-- Generated populations remain reproducible for the same input data and seed.
+The intended outcome is an experimental environment for comparing product concepts, pricing strategies, pitches, positioning, target-market assumptions, and social-response dynamics before moving to more expensive forms of validation.
 
-### Product-sensitive modelling
+---
 
-The simulator does not treat every pitch as the same generic product. It builds a deterministic product semantic profile from the submitted category, pitch, price, and billing cadence.
+## What ModelCouncil Does
 
-Current semantic signals include:
+A user supplies a product concept through the web interface, including information such as:
 
-- usefulness, quality, trust, and novelty evidence;
-- privacy exposure and data-practice risk;
-- complexity and recurring-cost burden;
-- reliability, serviceability, and safety risk;
+- product name;
+- category;
+- pitch or description;
+- price;
+- currency;
+- billing cadence;
+- population size/configuration;
+- number of simulation rounds;
+- dialogue/rendering mode;
+- deterministic random seed.
+
+ModelCouncil then:
+
+1. builds a synthetic consumer population from structured trait data;
+2. interprets the supplied product using deterministic semantic rules;
+3. calculates product-consumer fit and price context for each consumer;
+4. generates initial topic beliefs and purchase intent;
+5. constructs a weighted consumer social network;
+6. schedules realistic, capacity-limited conversations;
+7. propagates topic-specific evidence between consumers;
+8. updates consumer state synchronously after each round;
+9. tracks opinion and purchase-intent changes over time;
+10. optionally renders selected or all scheduled conversations through an LLM;
+11. exposes timelines, analytics, conversation replay, and network replay in the browser;
+12. writes local audit traces for reproducibility and debugging.
+
+---
+
+## Core Modelling Principles
+
+### Persistent synthetic consumers
+
+Consumers are persistent stateful entities rather than one-off prompts.
+
+A consumer can carry:
+
+- demographics;
+- economic characteristics;
+- decision style;
+- personality;
+- social behaviour;
+- technology adoption;
+- emotional tendencies;
+- price sensitivity;
+- risk tolerance;
+- brand loyalty;
+- product need;
+- topic-specific beliefs;
+- confidence;
+- product knowledge;
+- purchase intent;
+- social relationships and interaction history.
+
+Structured traits are loaded from editable Excel workbooks in `data/traits/`.
+
+### Product-sensitive evaluation
+
+ModelCouncil does not apply the same generic scoring function to every product.
+
+The product interpretation layer derives deterministic signals such as:
+
+- usefulness;
+- quality;
+- trust;
+- novelty;
+- privacy exposure;
+- complexity;
+- recurring-cost burden;
+- reliability risk;
+- serviceability risk;
+- safety risk;
+- data-practice risk;
 - cancellation friction;
 - claim uncertainty;
-- category/form-aware synthetic reference pricing.
+- category/form-aware reference-price context.
 
-Each consumer then receives a product-fit and price context that influences baseline beliefs and purchase intent. Price interpretation is cadence-aware, so monthly services are not evaluated as though they were one-time physical purchases.
+These signals become inputs to each consumer's individual evaluation.
 
-These coefficients and price anchors are simulator assumptions, not observed market averages.
+The semantic lexicons, rules, coefficients, and reference prices are modelling assumptions and can be refined or calibrated over time.
 
-### Social network and opinion dynamics
+### Consumer-product fit
 
-- Weighted K-nearest-neighbour network built from consumer similarity.
-- Seeded weak ties introduce bounded cross-cluster exposure.
-- Conversation scheduling is capacity-limited rather than assuming every neighbour talks every round.
-- Recent edge/topic history reduces repetitive conversations without permanently blocking important topics.
-- All conversations in a round read the same start-of-round snapshot.
-- Evidence is aggregated first, then one synchronous state update is committed.
-- Influence dynamics use explicit caps, saturation, bounded noise, trust/relationship information, and disagreement signals.
-- Social-dynamics diagnostics can measure opinion movement, dispersion, contact gaps, and weak-tie participation without changing the simulation itself.
+Different consumers can respond differently to the same product.
 
-### Conversation language
+Fit can include factors such as:
 
-ModelCouncil separates **semantic state** from **visible wording**.
+- category-conditioned need;
+- affordability;
+- adoption readiness;
+- risk compatibility;
+- privacy concern;
+- price pressure;
+- behavioural and decision-style context.
 
-Python decides the conversation pair, topic, stance, argument strength, confidence, price interpretation, and resulting numerical effects. A renderer may then express that fixed interaction as natural dialogue.
+This allows the same pitch to naturally create advocates, neutral consumers, skeptics, and non-buyers without forcing a fixed sentiment distribution.
 
-Rendered provider output is checked before acceptance. Validation rejects or falls back when wording contains problems such as:
+### Social network simulation
 
-- internal simulation-state leakage;
-- visible renderer/agent labels;
-- demographic or occupation-based affordability assumptions;
-- unsupported external product/market facts;
-- strong wording that contradicts the Python-owned semantic direction.
+Consumers are connected through a weighted K-nearest-neighbour graph.
 
-If rendering fails or violates the contract, the deterministic transcript remains available and the run continues.
+The graph represents candidate social similarity and relationships, not guaranteed conversations.
 
-### Dialogue modes
+ModelCouncil also introduces bounded weak ties so information can cross clusters rather than remaining trapped inside highly similar groups.
 
-| Mode | Behaviour |
+Conversation scheduling respects:
+
+- per-agent conversation capacity;
+- initiator probability;
+- relationship information;
+- conversation cooldowns;
+- weak-tie exposure;
+- recent interaction history;
+- disagreement and relevance.
+
+### Synchronous opinion updates
+
+All conversations inside a round read the same start-of-round state.
+
+The system then aggregates the resulting evidence and commits one combined state update per consumer.
+
+Conceptually:
+
+```text
+freeze state S(t)
+      |
+schedule conversations
+      |
+all conversations read S(t)
+      |
+produce topic evidence
+      |
+aggregate evidence by consumer/topic
+      |
+calculate bounded state deltas
+      |
+commit once
+      |
+state S(t+1)
+```
+
+This prevents conversation ordering from arbitrarily changing the result.
+
+### Opinion and purchase intent are separate
+
+A consumer can like a product but still have low purchase intent because of:
+
+- price;
+- insufficient need;
+- risk;
+- privacy concerns;
+- recurring cost;
+- adoption friction;
+- other consumer-product fit constraints.
+
+This separation is important when comparing product desirability with commercial intent.
+
+---
+
+## Conversation System
+
+ModelCouncil separates **simulation semantics** from **natural-language rendering**.
+
+Python owns the authoritative interaction state:
+
+- who talks;
+- what topic is discussed;
+- the stance of each participant;
+- argument strength;
+- confidence;
+- price interpretation;
+- resulting evidence;
+- resulting numerical state changes.
+
+Natural-language renderers only express those already-computed semantics.
+
+### Deterministic dialogue
+
+Every run can operate without external LLM calls.
+
+ModelCouncil includes a deterministic background language renderer that produces readable conversations from semantic state.
+
+### DeepSeek
+
+DeepSeek can be used as an optional cloud language renderer.
+
+The backend keeps credentials server-side and records useful provider telemetry such as:
+
+- prompt tokens;
+- cache-hit tokens;
+- cache-miss tokens;
+- completion tokens;
+- latency;
+- fallback count;
+- estimated cost.
+
+### Ollama Local
+
+ModelCouncil can also discover and use locally installed Ollama models.
+
+The browser never talks directly to Ollama. The FastAPI backend discovers available local models and exposes them through the provider catalogue.
+
+ModelCouncil does not install, download, start, update, or remove Ollama models.
+
+### Language validation
+
+Provider-generated dialogue is checked before being accepted.
+
+Validation can reject output containing:
+
+- internal simulator-state terminology;
+- renderer or agent implementation labels;
+- demographic affordability stereotypes;
+- unsupported external market/product facts;
+- wording that contradicts the Python-owned semantic stance.
+
+When a provider response fails validation or generation, ModelCouncil falls back to deterministic dialogue instead of allowing the language model to corrupt simulation state.
+
+---
+
+## Dialogue Modes
+
+ModelCouncil supports several language-rendering modes.
+
+| Mode | Purpose |
 |---|---|
-| `Economy` | Deterministic simulation with a small importance-selected set eligible for live DeepSeek wording when live rendering is enabled. |
-| `Balanced` | Deterministic simulation with broader selective DeepSeek rendering when enabled. |
-| `Full` | Deterministic simulation with the broadest bounded selective DeepSeek rendering, still subject to the configured per-run live-request ceiling. |
-| `Full Live` | Separate confirmed asynchronous job that attempts **every conversation already scheduled by the simulator** through the selected DeepSeek or Ollama model, using bounded provider concurrency. |
+| `Economy` | Low-cost selective LLM rendering for a small set of important conversations. |
+| `Balanced` | Broader selective rendering while keeping API usage bounded. |
+| `Full` | The broadest bounded selective rendering for a normal simulation run. |
+| `Full Live` | Attempts every conversation already scheduled by the simulator through the selected DeepSeek or Ollama model. |
 
-Ordinary Economy/Balanced/Full runs remain usable without a live API key and fall back to deterministic wording.
+Full Live does **not** create additional conversations. It renders the conversations the numerical simulator already scheduled.
 
-`Full Live` does not create extra social interactions. It renders the exact conversations the scheduler produced. There is no hidden total LLM-call cap inside Full Live, but the simulation request itself is still protected by the global workload limit and the UI requires explicit confirmation.
+Cloud providers may incur API costs. Local Ollama execution may require substantial CPU, GPU, RAM, and processing time.
 
-### DeepSeek and Ollama Local
+---
 
-The backend exposes a provider catalog through `GET /api/v1/llm/providers`.
+## Population Presets
 
-- **DeepSeek** uses the configured cloud API key/model and reports token, cache, latency, fallback, and estimated-cost telemetry.
-- **Ollama Local** discovers models from the backend machine's Ollama service and uses local compute. ModelCouncil does not install, start, pull, update, or delete Ollama models.
-- The browser never receives the DeepSeek API key and never connects directly to Ollama.
-- Provider concurrency is bounded independently for cloud and local execution.
+| Preset | Consumers | Base K | Initiator Rate | Max Chats / Agent / Round | Weak Ties |
+|---|---:|---:|---:|---:|---:|
+| Small | 250 | 10 | 20% | 2 | 5% |
+| Standard | 1,000 | 14 | 20% | 2 | 5% |
+| Large | 5,000 | 18 | 20% | 2 | 5% |
 
-Full Live jobs currently live in FastAPI process memory. Restarting the backend clears their job records.
+Default simulated round duration is five minutes.
 
-### Advanced simulation controls
+The web API applies workload limits to prevent a synchronous request from creating an uncontrolled simulation.
 
-The standard Small/Standard/Large presets remain the default execution path. An optional Advanced mode uses the chosen preset as a template and allows run-local overrides for:
+---
+
+## Advanced Simulation Controls
+
+The built-in population presets are the default configuration.
+
+Advanced mode allows run-specific overrides for:
 
 - population size;
 - K-neighbour count;
-- maximum conversations per agent per round;
-- conversation initiator rate;
+- maximum conversations per consumer per round;
+- initiator rate;
 - weak-tie rate;
 - simulated minutes per round;
-- rounds;
+- number of rounds;
 - seed.
 
 Backend validation is authoritative.
+
+Typical hard limits include:
 
 ```text
 Population                  2 .. 5,000
@@ -164,67 +312,306 @@ Rounds                      1 .. 100
 Conversation upper bound    <= 100,000
 ```
 
-When Advanced mode is off, preset-specific synchronous round limits remain enforced.
+---
 
-## Population presets
+## Analytics and Replay
 
-| Preset | Population | Base K | Initiator rate | Max chats / agent / round | Weak ties | Max web rounds |
-|---|---:|---:|---:|---:|---:|---:|
-| Small | 250 | 10 | 20% | 2 | 5% | 100 |
-| Standard | 1,000 | 14 | 20% | 2 | 5% | 50 |
-| Large | 5,000 | 18 | 20% | 2 | 5% | 20 |
+The web results interface provides several views into a simulation.
 
-Default simulated round duration is five minutes.
+### Run summary
 
-## Results and analytics
+High-level metrics include:
 
-The current Results command center includes:
+- population size;
+- total conversations;
+- final mean opinion;
+- final mean purchase intent;
+- active configuration and seed.
 
-- run summary and final aggregate metrics;
-- opinion/purchase timeline;
-- network replay with active-conversation edges;
-- selected conversation replay with source/importance metadata;
-- dialogue/provider telemetry;
-- six dashboard views:
-  1. final sentiment composition;
-  2. purchase-intent distribution;
-  3. opinion and purchase trend;
-  4. conversation volume by round;
-  5. signed topic conversation pressure;
-  6. influence-vs-purchase scatter.
+### Timeline
 
-The replay/network payload is deliberately bounded so a 5,000-consumer run does not require rendering every graph node and edge in the browser.
+Shows how aggregate opinion, purchase intent, sentiment composition, and conversation volume evolve across rounds.
 
-## Run-audit tracing
+### Consumer network replay
 
-Actual simulation runs create local audit artifacts under:
+A bounded social-network view allows the user to inspect:
+
+- sampled consumers;
+- social edges;
+- influence;
+- consumer opinion state;
+- purchase intent;
+- active conversation edges by round.
+
+The browser intentionally renders a bounded sample rather than attempting to draw every node in a 5,000-consumer simulation.
+
+### Conversation replay
+
+Important conversations can be inspected with:
+
+- participating consumer IDs;
+- round;
+- topics;
+- transcript;
+- language source;
+- importance;
+- LLM-selection information.
+
+### Analytics dashboard
+
+The dashboard includes views such as:
+
+1. final sentiment composition;
+2. purchase-intent distribution;
+3. opinion and purchase trend;
+4. conversation volume by round;
+5. topic conversation pressure;
+6. influence-vs-purchase distribution.
+
+---
+
+## Run Auditing and Reproducibility
+
+Simulation runs can create detailed local audit traces under:
 
 ```text
 logs/model-runs/
 ```
 
-The canonical trace is append-only JSONL with a matching bounded Markdown summary. Depending on the run, events cover product interpretation, workbook provenance, population generation, graph formation, scheduling, semantic messages, evidence aggregation, state commits, purchase-intent math, language-render requests/responses, validation/fallbacks, provider telemetry, and terminal status.
+Audit events can include:
 
-Audit logging is intended to be observational: enabling it must not change seeded numerical results or provider request payloads. Credentials and authorization secrets are not intentionally persisted. Run logs can still contain confidential product pitches and detailed synthetic-agent state, so `logs/` is excluded from Git and should be treated as local sensitive debugging data.
+- product interpretation;
+- trait-workbook provenance;
+- generated consumer state;
+- product-consumer fit;
+- pricing calculations;
+- graph construction;
+- scheduled conversations;
+- semantic messages;
+- influence/evidence calculations;
+- state updates;
+- purchase-intent calculations;
+- language-render requests and responses;
+- provider telemetry;
+- validation failures and fallbacks;
+- terminal run status.
 
-## Repository structure
+The canonical trace format is append-only JSONL with a bounded Markdown summary.
+
+Audit logging is intended to be observational: enabling tracing should not change a seeded numerical simulation.
+
+Because traces can contain confidential product descriptions and detailed synthetic consumer state, `logs/` is excluded from Git.
+
+---
+
+## Project Architecture
 
 ```text
-frontend/          Next.js 16 + React 19 browser UI
-backend/           FastAPI API, schemas, configuration, orchestration
-simulation/        Framework-independent simulation/domain engine
-data/traits/       Canonical trait source, manifest, generated Excel workbooks
-tests/             Backend and simulation regression/contract tests
-docs/decisions/    Architecture decision records
-scripts/           Bootstrap, verification, trait generation, smoke utilities
-docker/            Frontend/backend container definitions
+ModelCouncil
+|
+|-- frontend/
+|   `-- Next.js web application
+|
+|-- backend/
+|   `-- FastAPI API and orchestration
+|
+|-- simulation/
+|   |-- population/
+|   |-- product/
+|   |-- network/
+|   |-- conversation/
+|   |-- opinion/
+|   |-- behaviour/
+|   |-- analytics/
+|   |-- audit/
+|   `-- llm/
+|
+|-- data/
+|   `-- traits/
+|
+|-- tests/
+|   |-- backend/
+|   `-- simulation/
+|
+|-- scripts/
+|-- docker/
+`-- docs/
 ```
 
-The main architectural boundary is intentional: `simulation/` does not depend on FastAPI or browser code, frontend code never owns server secrets, and LLM providers do not own consumer state.
+### Architectural boundaries
 
-## Trait workbooks
+- `simulation/` remains independent from FastAPI and browser code.
+- Backend routes stay thin and delegate orchestration to services.
+- Frontend code never owns provider secrets.
+- LLM providers do not own or directly mutate consumer state.
+- Product semantics and numerical influence remain deterministic Python logic.
+- Randomness is seeded where practical for reproducibility.
 
-`data/traits/` contains the editable generated workbooks used by population construction:
+---
+
+## Technology Stack
+
+### Frontend
+
+- Next.js 16
+- React 19
+- TypeScript
+- ESLint
+
+### Backend
+
+- Python 3.12+
+- FastAPI
+- Uvicorn
+- Pydantic / Pydantic Settings
+- HTTPX
+
+### Simulation and data
+
+- NumPy
+- pandas
+- scikit-learn
+- NetworkX
+- openpyxl
+
+### Testing
+
+- pytest
+- pytest-asyncio
+- frontend lint/build verification
+
+### Optional language providers
+
+- DeepSeek API
+- Ollama Local
+
+---
+
+## Requirements
+
+Install the following before running ModelCouncil locally:
+
+- Python 3.12 or newer;
+- Node.js 20.9 or newer;
+- npm;
+- PowerShell for the included Windows helper scripts.
+
+Optional:
+
+- a DeepSeek API key for cloud-rendered conversations;
+- Ollama for local-model Full Live rendering;
+- Docker if using the included container configuration.
+
+---
+
+## Local Installation
+
+Clone the repository and enter the project directory.
+
+Create the local development environment:
+
+```powershell
+.\scripts\bootstrap.ps1
+```
+
+The bootstrap script:
+
+- creates `.venv`;
+- installs `backend/requirements.txt`;
+- installs frontend npm dependencies.
+
+---
+
+## Running ModelCouncil
+
+### Development launcher
+
+On Windows:
+
+```powershell
+.\start-dev.ps1
+```
+
+This starts the backend and frontend development servers.
+
+```text
+Frontend       http://localhost:3000
+Simulation     http://localhost:3000/simulate
+Backend        http://127.0.0.1:8000
+FastAPI docs   http://127.0.0.1:8000/docs
+```
+
+### Start the backend manually
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+python -m uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+### Start the frontend manually
+
+```powershell
+cd frontend
+npm.cmd run dev
+```
+
+---
+
+## Environment Configuration
+
+Copy the example configuration into a local root `.env`.
+
+```text
+.env.example -> .env
+```
+
+Do not commit `.env`.
+
+### DeepSeek
+
+Example:
+
+```text
+DEEPSEEK_API_KEY=your_key_here
+DEEPSEEK_LIVE_ENABLED=true
+```
+
+Additional controls are available in `.env.example`, including:
+
+```text
+DEEPSEEK_MODEL
+DEEPSEEK_THINKING
+DEEPSEEK_RENDER_CONCURRENCY
+DEEPSEEK_FULL_LIVE_CONCURRENCY
+DEEPSEEK_MAX_LIVE_REQUESTS_PER_RUN
+DEEPSEEK_CACHE_PRIME_REQUESTS
+```
+
+### Ollama
+
+Default local configuration:
+
+```text
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+OLLAMA_DISCOVERY_TIMEOUT_SECONDS=2
+OLLAMA_REQUEST_TIMEOUT_SECONDS=120
+OLLAMA_NUM_CTX=2048
+OLLAMA_FULL_LIVE_CONCURRENCY=1
+```
+
+Start and manage Ollama separately. ModelCouncil will discover available models through the backend.
+
+---
+
+## Trait Data
+
+Synthetic population definitions live in:
+
+```text
+data/traits/
+```
+
+The repository includes workbooks such as:
 
 - `archetypes.xlsx`
 - `compatibility_rules.xlsx`
@@ -238,17 +625,21 @@ The main architectural boundary is intentional: `simulation/` does not depend on
 - `social_behaviour.xlsx`
 - `technology.xlsx`
 
-`catalog.source.json` is the versioned canonical seed definition. `catalog.manifest.json` stores each generated workbook's SHA-256 and byte size, and tests detect missing or modified generated workbooks.
+`catalog.source.json` is the canonical structured source used to generate the workbooks.
 
-Regenerate them with:
+`catalog.manifest.json` records workbook integrity information.
+
+Regenerate the workbooks with:
 
 ```powershell
 python scripts\generate_trait_workbooks.py
 ```
 
-## API surface
+---
 
-The current API is mounted under `/api/v1`.
+## API
+
+The backend API is mounted under `/api/v1`.
 
 ```text
 GET  /api/v1/health
@@ -263,101 +654,13 @@ GET  /api/v1/simulations/full-live/{job_id}/result
 POST /api/v1/simulations/full-live/{job_id}/cancel
 ```
 
-FastAPI's local interactive documentation is available at `http://127.0.0.1:8000/docs` while the backend is running.
-
-## Prerequisites
-
-- Python 3.12+
-- Node.js 20.9+
-- npm
-- Windows PowerShell for the included helper scripts
-
-On Windows, use `npm.cmd` if the PowerShell `npm.ps1` shim is blocked by execution policy.
-
-## Local setup
-
-From the repository root:
-
-```powershell
-.\scripts\bootstrap.ps1
-```
-
-This creates `.venv`, installs `backend/requirements.txt`, and installs frontend packages.
-
-For the normal local development launcher:
-
-```powershell
-.\start-dev.ps1
-```
-
-It starts:
+Interactive API documentation is available from FastAPI at:
 
 ```text
-Frontend       http://localhost:3000
-Simulation     http://localhost:3000/simulate
-Backend        http://127.0.0.1:8000
-FastAPI docs   http://127.0.0.1:8000/docs
+http://127.0.0.1:8000/docs
 ```
 
-You can also start both sides manually.
-
-### Backend
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-python -m uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
-```
-
-### Frontend
-
-```powershell
-cd frontend
-npm.cmd run dev
-```
-
-## DeepSeek configuration
-
-Copy `.env.example` to a local root `.env` and add the real credential there:
-
-```text
-DEEPSEEK_API_KEY=your_key_here
-DEEPSEEK_LIVE_ENABLED=true
-```
-
-Useful controls already exposed in `.env.example` include:
-
-```text
-DEEPSEEK_MODEL
-DEEPSEEK_THINKING
-DEEPSEEK_RENDER_CONCURRENCY
-DEEPSEEK_FULL_LIVE_CONCURRENCY
-DEEPSEEK_MAX_LIVE_REQUESTS_PER_RUN
-DEEPSEEK_CACHE_PRIME_REQUESTS
-```
-
-The project-root `.env` is local-only. Never place provider credentials in frontend environment files, source code, screenshots, fixtures, or documentation.
-
-A bounded DeepSeek connectivity/cache smoke utility is available:
-
-```powershell
-.\.venv\Scripts\python.exe scripts\deepseek_smoke.py --calls 3
-```
-
-The smoke script refuses more than 10 calls and does not print the API key.
-
-## Ollama Local configuration
-
-Default local settings are defined in `.env.example`:
-
-```text
-OLLAMA_BASE_URL=http://127.0.0.1:11434
-OLLAMA_DISCOVERY_TIMEOUT_SECONDS=2
-OLLAMA_REQUEST_TIMEOUT_SECONDS=120
-OLLAMA_NUM_CTX=2048
-OLLAMA_FULL_LIVE_CONCURRENCY=1
-```
-
-Start and manage Ollama separately, then use **Refresh providers** in the Full Live selector. Only models reported by the backend's local Ollama discovery are selectable.
+---
 
 ## Verification
 
@@ -367,43 +670,122 @@ Run the repository checks with:
 .\scripts\check.ps1
 ```
 
-The script runs the Python test suite and, when frontend dependencies are installed, frontend lint and production build checks.
+The verification workflow covers the Python test suite and, when frontend dependencies are installed, frontend linting and production build checks.
 
-Individual commands are also available:
+Individual commands:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -p no:cacheprovider tests -q
+```
+
+```powershell
 cd frontend
 npm.cmd run lint
 npm.cmd run build
 ```
 
-## Reproducibility and safety boundaries
+---
 
-- The same input, seed, trait data, and configuration are intended to produce the same numerical simulation result.
-- LLM wording is downstream of semantic computation and cannot author numerical consumer state.
-- Provider failures and semantic-language validation failures fall back instead of corrupting the run.
-- Web and Advanced modes enforce hard workload limits.
-- Full Live requires explicit confirmation because cloud execution can create API cost and Ollama can consume significant local compute.
-- Real secrets, local runtime logs, generated caches, and local development-tool metadata are excluded from source control.
+## Security and Privacy
 
-## Current limitations
+- Provider API keys remain server-side.
+- `.env` files containing secrets are ignored by Git.
+- Runtime audit logs are ignored by Git.
+- Frontend code must never contain DeepSeek credentials.
+- Provider output is validated before being shown as accepted rendered dialogue.
+- Audit serialization is designed to avoid intentionally persisting credentials or authorization headers.
+- Product pitches and run traces may contain confidential information and should be treated accordingly.
 
-- Consumer coefficients, semantic lexicons, compatibility rules, and price anchors are synthetic assumptions rather than empirically fitted market parameters.
-- Full Live job state is in-process and not durable across backend restarts.
-- Persistence, user authentication, saved projects, and durable job workers are not implemented yet.
-- Multimodal image/document ingestion is not part of the current normalized product-input path.
-- Results should be interpreted as controlled synthetic experiments, not predicted sales or real-population survey statistics.
+---
 
-## Deployment direction
+## Intended Use Cases
 
-The intended deployment boundary remains:
+ModelCouncil can be used for synthetic experimentation around:
+
+- early product concepts;
+- product positioning;
+- pricing;
+- subscription vs. one-time purchase models;
+- feature/pitch comparisons;
+- trust and privacy concerns;
+- market-message testing;
+- adoption resistance;
+- product-category fit;
+- social propagation;
+- consumer segmentation;
+- conversation analysis;
+- sensitivity testing across different population/network assumptions.
+
+It is especially useful when the goal is to understand **how assumptions interact inside a simulated society**, rather than receive one aggregate opinion from a single model.
+
+---
+
+## Intended Outcome
+
+The long-term outcome of ModelCouncil is a reproducible product-intelligence environment where a team can:
+
+1. describe a product or market proposition;
+2. place it inside a diverse synthetic population;
+3. observe first-order consumer reactions;
+4. watch social interaction change those reactions;
+5. inspect why consumers changed;
+6. compare configurations and alternative propositions;
+7. identify assumptions worth testing with real customers;
+8. export insights into a later empirical research or product-development process.
+
+The project is designed to complement—not replace—real customer interviews, surveys, behavioural data, experimentation, and market validation.
+
+---
+
+## Limitations
+
+ModelCouncil currently models a synthetic society using designed rules and priors.
+
+Important limitations include:
+
+- synthetic trait distributions are not automatically representative of a real population;
+- semantic coefficients and price anchors are modelling assumptions;
+- generated dialogue is not evidence that a real consumer would say the same thing;
+- Full Live language rendering does not make the underlying numerical model more empirically valid;
+- provider-generated wording can vary even when numerical state is deterministic;
+- backend Full Live jobs use process memory rather than durable distributed job storage;
+- saved user projects, authentication, and persistent historical runs require separate persistence infrastructure;
+- results should not be described as predicted revenue, conversion, or statistically representative survey results without independent calibration.
+
+---
+
+## Development Direction
+
+ModelCouncil is structured so future work can extend the simulator without changing its core boundaries.
+
+Natural extension areas include:
+
+- empirical calibration against real datasets;
+- richer consumer memory and provenance;
+- deeper explanation of individual belief changes;
+- saved simulations and comparison workflows;
+- durable background-job infrastructure;
+- persistent projects and authentication;
+- richer network exploration;
+- product document/image ingestion;
+- configurable geographic or demographic population models;
+- scenario comparison and experiment management;
+- external validation against surveys, experiments, and observed market behaviour.
+
+---
+
+## Deployment Model
+
+The architecture supports a deployment split such as:
 
 ```text
 GitHub
-  |- Vercel / equivalent        -> Next.js frontend
-  |- container host             -> FastAPI backend
-  `- PostgreSQL / Supabase      -> later persistence/authentication
+  |
+  |-- Next.js frontend  -> Vercel or equivalent
+  |
+  |-- FastAPI backend   -> container/application host
+  |
+  `-- PostgreSQL        -> future persistence/authentication
 ```
 
-The simulation package remains independent from deployment infrastructure so it can be tested, profiled, and reproduced without the web stack.
+The simulation engine remains independent from deployment infrastructure so it can be tested, profiled, and reproduced separately from the web stack.
