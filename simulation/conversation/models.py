@@ -26,3 +26,4 @@ class ConversationResult:
     conversation_id: str
     messages: list[SemanticMessage] = field(default_factory=list)
     transcript: list[dict[str, str | int]] = field(default_factory=list)
+    language_source: str = "background"

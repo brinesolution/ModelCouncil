@@ -1,7 +1,16 @@
-import type { SimulationNetworkNode, SimulationRunResponse } from "@/types/results";
+import { LedStatus } from "@/components/industrial/led-status";
+import type {
+  SimulationNetworkNode,
+  SimulationReplayAgentState,
+  SimulationReplayConversation,
+  SimulationRunResponse,
+} from "@/types/results";
 
 interface NetworkPreviewProps {
   network: SimulationRunResponse["network"];
+  nodeStates?: SimulationReplayAgentState[];
+  activeConversations?: SimulationReplayConversation[];
+  round?: number;
 }
 
 const WIDTH = 760;
@@ -35,24 +44,55 @@ function opinionClass(opinion: number) {
   return "networkNeutral";
 }
 
-export function NetworkPreview({ network }: NetworkPreviewProps) {
-  const nodes = network.nodes.slice(0, MAX_NODES);
+export function NetworkPreview({
+  network,
+  nodeStates = [],
+  activeConversations = [],
+  round,
+}: NetworkPreviewProps) {
+  const replayById = new Map(nodeStates.map((state) => [state.id, state]));
+  const nodes = network.nodes.slice(0, MAX_NODES).map((node) => {
+    const state = replayById.get(node.id);
+    return state
+      ? {
+          ...node,
+          opinion: state.opinion,
+          purchase_intent: state.purchase_intent,
+        }
+      : node;
+  });
   const ids = new Set(nodes.map((node) => node.id));
   const points = coordinates(nodes);
   const edges = network.edges.filter((edge) => ids.has(edge.source) && ids.has(edge.target));
+  const activeVisible = activeConversations.filter(
+    (conversation) => ids.has(conversation.source) && ids.has(conversation.target),
+  );
 
   return (
-    <section className="resultSection" aria-labelledby="network-title">
-      <div className="resultHeader">
+    <section className="networkReplayPanel" aria-labelledby="network-title">
+      <div className="networkPanelHeader">
         <div>
-          <h2 id="network-title">Consumer network preview</h2>
-          <p className="muted">A bounded sample of the full KNN graph. Node state reflects final opinion.</p>
+          <span className="techLabel">Network field / sampled topology</span>
+          <h3 id="network-title">Consumer interaction map</h3>
+          <p>
+            Node size reflects influence. Opinion state changes with the selected replay round; signal-red edges are active conversations.
+          </p>
         </div>
-        <span className="muted">{nodes.length} visible agents</span>
+        <div className="networkPanelStatus">
+          <LedStatus label={activeVisible.length ? "Signal active" : "Monitoring"} tone={activeVisible.length ? "red" : "green"} compact />
+          <span className="mono">{round === undefined ? "FINAL" : `R${round}`} / {nodes.length} NODES</span>
+        </div>
       </div>
 
       <div className="networkFrame">
-        <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-label="Synthetic consumer social network">
+        <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-label="Synthetic consumer social network replay">
+          <defs>
+            <radialGradient id="networkGlow" cx="50%" cy="42%" r="70%">
+              <stop offset="0%" stopColor="#b92b3c" stopOpacity="0.10" />
+              <stop offset="100%" stopColor="#101318" stopOpacity="0" />
+            </radialGradient>
+          </defs>
+          <rect width={WIDTH} height={HEIGHT} fill="url(#networkGlow)" />
           {edges.map((edge) => {
             const source = points.get(edge.source);
             const target = points.get(edge.target);
@@ -68,6 +108,21 @@ export function NetworkPreview({ network }: NetworkPreviewProps) {
               />
             );
           })}
+          {activeVisible.map((conversation) => {
+            const source = points.get(conversation.source);
+            const target = points.get(conversation.target);
+            if (!source || !target) return null;
+            return (
+              <line
+                key={`active-${conversation.conversation_id}`}
+                x1={source.x}
+                y1={source.y}
+                x2={target.x}
+                y2={target.y}
+                className="networkEdgeActive"
+              />
+            );
+          })}
           {nodes.map((node) => {
             const point = points.get(node.id);
             if (!point) return null;
@@ -80,11 +135,17 @@ export function NetworkPreview({ network }: NetworkPreviewProps) {
                 r={radius}
                 className={`networkNode ${opinionClass(node.opinion)}`}
               >
-                <title>{`Agent ${node.id} · ${node.segment} · opinion ${node.opinion.toFixed(2)}`}</title>
+                <title>{`Agent ${node.id} · ${node.segment} · opinion ${node.opinion.toFixed(2)} · purchase ${Math.round(node.purchase_intent * 100)}%`}</title>
               </circle>
             );
           })}
         </svg>
+        <div className="networkLegend" aria-label="Network opinion legend">
+          <span><i className="legendDot networkPositive" />Positive</span>
+          <span><i className="legendDot networkNeutral" />Neutral</span>
+          <span><i className="legendDot networkNegative" />Negative</span>
+          <span><i className="legendLine activeLegendLine" />Active conversation</span>
+        </div>
       </div>
     </section>
   );

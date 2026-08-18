@@ -6,16 +6,31 @@ from simulation.population.excel_repository import ExcelTraitRepository
 
 TRAIT_ROOT = Path(__file__).resolve().parents[2] / "data" / "traits"
 MANIFEST_PATH = TRAIT_ROOT / "catalog.manifest.json"
+SOURCE_PATH = TRAIT_ROOT / "catalog.source.json"
 
 
 def _load_manifest() -> dict:
     return json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
 
 
+def test_every_trait_category_has_exactly_ten_source_rows():
+    source = json.loads(SOURCE_PATH.read_text(encoding="utf-8"))
+
+    assert source["categories"]
+    for category, payload in source["categories"].items():
+        assert len(payload["rows"]) == 10, f"{category} must contain exactly 10 trait rows"
+        keys = [row["key"] for row in payload["rows"]]
+        assert len(keys) == len(set(keys)), f"{category} contains duplicate trait keys"
+
+
 def test_manifest_references_real_trait_workbooks():
     manifest = _load_manifest()
     declared = {entry["file"] for entry in manifest["workbooks"]}
-    actual = {path.name for path in TRAIT_ROOT.glob("*.xlsx")}
+    actual = {
+        path.name
+        for path in TRAIT_ROOT.glob("*.xlsx")
+        if not path.name.startswith("~$")
+    }
 
     assert declared
     assert actual == declared

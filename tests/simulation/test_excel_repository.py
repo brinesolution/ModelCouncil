@@ -60,6 +60,21 @@ def test_excel_repository_preserves_category_specific_attributes(tmp_path: Path)
     assert item.attributes["emotionality"] == pytest.approx(0.2)
 
 
+def test_excel_repository_ignores_microsoft_office_lock_files(tmp_path: Path):
+    workbook = tmp_path / "personality.xlsx"
+    create_test_workbook(
+        workbook,
+        rows=[
+            {"key": "balanced", "label": "Balanced", "weight": 1.0, "enabled": True},
+        ],
+    )
+    (tmp_path / "~$personality.xlsx").write_text("office lock placeholder", encoding="utf-8")
+
+    catalog = ExcelTraitRepository(tmp_path).load_catalog()
+
+    assert [item.key for item in catalog.category("personality")] == ["balanced"]
+
+
 def test_validator_rejects_duplicate_keys(tmp_path: Path):
     workbook = tmp_path / "personality.xlsx"
     create_test_workbook(

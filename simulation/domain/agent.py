@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
 
+from simulation.domain.consumer_context import ConsumerContext
+
 
 def clamp01(value: float) -> float:
     return max(0.0, min(1.0, value))
@@ -90,5 +92,6 @@ class ConsumerAgent:
     income_score: float
     traits: AgentTraits
     state: AgentState = field(default_factory=AgentState)
+    context: ConsumerContext = field(default_factory=ConsumerContext)
     primary_language: str = "English"
     locale: str = "Indian English"

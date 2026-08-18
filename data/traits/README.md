@@ -1,8 +1,8 @@
 # Trait Data Contract
 
-ModelCouncil uses editable Excel workbooks as the first human-maintained source of synthetic consumer distributions. Python reads them only through `ExcelTraitRepository`; behavioural code never depends on workbook cell coordinates.
+ModelCouncil exposes editable Excel workbooks as the human-readable trait interface. During Phase 2A, `catalog.source.json` is the reproducible generator source and every category is required to contain exactly 10 trait rows. Python reads workbook data only through `ExcelTraitRepository`; behavioural code never depends on workbook cell coordinates.
 
-## Phase 1 workbook set
+## Current workbook set
 
 ```text
 data/traits/
@@ -36,6 +36,8 @@ Every workbook uses named columns. These columns are mandatory:
 `label` is strongly recommended for human-readable text.
 
 Any additional columns are category-specific attributes and are preserved by the loader in `TraitValue.attributes`. Examples include `logicality`, `income_min`, `technology_adoption`, `message_accuracy`, and `evidence_requirement`.
+
+Phase 2J-B adds an explicit activation contract in `simulation/population/activation.py`. Every loaded attribute is classified as **active**, **derived**, or **provenance-only**. Loading a column no longer implies that the numerical consumer uses it. Tests fail when a newly loaded attribute has no activation declaration.
 
 ### `Metadata`
 
@@ -75,15 +77,23 @@ If `category` is absent, the loader falls back to the workbook filename stem.
 7. reads optional `Metadata`;
 8. validates the complete catalog before use.
 
-The generated population can still use the bootstrap distributions when no Excel repository is supplied. This keeps tests and development independent from external files.
+The Excel-backed generator now samples demographics, archetypes, occupations, personality, economics, social behaviour, technology, consumer behaviour, decision style, and emotion. Archetype preferences are soft probability multipliers rather than fixed personas. Compatibility rules are parsed and applied deterministically after profile construction, and each applied rule is written into the run audit trace.
+
+Age is generated from the intersection of the sampled demographic age range and occupation minimum age; the previous fixed maximum near 55 is no longer used. The current demographic catalog therefore produces consumers into their 60s.
+
+The generated population can still use the bootstrap distributions when no Excel repository is supplied. Bootstrap/manual agents receive neutral default `ConsumerContext` values and retain the legacy category-affinity need fallback; rich category/life-context need is used when active Excel context is present. This keeps tests and development independent from external files while preventing placeholder context from being treated as real demographics.
 
 ## Rules
 
-1. Behavioral intensities normally use `0..1`; product opinions use `-1..1`.
-2. Sampling weights do not need to sum to one.
-3. Stable `key` values are machine contracts; labels/descriptions may be edited more freely.
-4. Avoid deterministic stereotypes: profiles are priors plus correlated random variation.
-5. Impossible combinations belong in compatibility/correlation rules rather than scattered conditional logic.
-6. Explicit model assumptions must remain inspectable and versioned.
-7. Simulation output must stay labeled synthetic until real-world calibration is performed.
-8. Future empirical datasets may calibrate these distributions without changing the `ConsumerAgent` interface.
+1. Every current trait category must contain exactly **10** rows with unique stable keys.
+2. Behavioral intensities normally use `0..1`; product opinions use `-1..1`.
+3. Sampling weights do not need to sum to one.
+4. Stable `key` values are machine contracts; labels/descriptions may be edited more freely.
+5. Avoid deterministic stereotypes: profiles are priors plus correlated random variation.
+6. Impossible combinations belong in compatibility/correlation rules rather than scattered conditional logic.
+7. Explicit model assumptions must remain inspectable and versioned.
+8. Simulation output must stay labeled synthetic until real-world calibration is performed.
+9. Future empirical datasets may calibrate these distributions without changing the `ConsumerAgent` interface.
+10. `ConsumerAgent.context` is the active nested home for demographic, occupation, economic, decision, emotional, behavioural, technology, and social context; do not flatten new workbook columns into `AgentTraits` without an explicit modeling reason.
+11. Category/life-context need is product-form specific. Generic `product_need` is only a modest prior for Excel-backed agents rather than a universal appetite for unrelated products.
+12. Compatibility-rule grammar is validated; unsupported conditions, targets, operators, or effects must fail rather than being silently ignored.

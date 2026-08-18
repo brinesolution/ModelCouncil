@@ -1,62 +1,62 @@
 {
   "schema_version": "1.0",
   "generated_on": "2026-08-17",
-  "generator": "scripts/generate_trait_workbooks.py",
+  "generator": "artifact_tool verified Phase 2 10-row bundle",
   "workbooks": [
     {
       "file": "archetypes.xlsx",
-      "sha256": "bbae845e0e62876d933ebaf1611483c29570b05a0d5c85ac0f77e4de0d427f87",
-      "size_bytes": 6955
+      "sha256": "ebcf77b3804f0523624f9792106a52c9fdce0a2ecfb16e8b763ff80ed24e667f",
+      "size_bytes": 6327
     },
     {
       "file": "compatibility_rules.xlsx",
-      "sha256": "6b7664c99be476414d0eb3e4abc88ec5ac74e578740c20ce6a93da009710b41b",
-      "size_bytes": 6763
+      "sha256": "2c99a694cbb628f0e82410c20e6a335591e7198d337ee108ee3d521ff508301f",
+      "size_bytes": 6291
     },
     {
       "file": "consumer_behaviour.xlsx",
-      "sha256": "3823d666703a4f01f83be031f5166e0bd06de21ce620f0349f30ad1aa6fdd02b",
-      "size_bytes": 6773
+      "sha256": "facefb58b913c8b1622ec686bfbdf7eae468cea0b1f5cf7e51cac90115920237",
+      "size_bytes": 6290
     },
     {
       "file": "decision_styles.xlsx",
-      "sha256": "cb19bfe61b86ef61d1d7d974730aafbac7a8231537c5600e0dcea57b102db80d",
-      "size_bytes": 6698
+      "sha256": "2fa6d9617fb8c07f4dcc3dfcc705455d61439e9c799168258220e9f5189d6147",
+      "size_bytes": 6197
     },
     {
       "file": "demographics.xlsx",
-      "sha256": "7f1e7a46f74af6a11f15eb8c2fe2644568c2c77b806d9cc5e59fa7fae1fb572a",
-      "size_bytes": 6599
+      "sha256": "b6b8e06411ffd1f8b90a810e8d6d1dbf52b36baa13f85300c78eb09b0a2648bb",
+      "size_bytes": 6191
     },
     {
       "file": "economic_traits.xlsx",
-      "sha256": "caf5499779dcfadb9bf0349cf5e65cc5b01789fb4280fca9276828a4e6c7bb25",
-      "size_bytes": 6617
+      "sha256": "0a417609813db0a7df44b3ef0789324647789aaff0e25c3d8765c53eff0ae78d",
+      "size_bytes": 6260
     },
     {
       "file": "emotions.xlsx",
-      "sha256": "5fda5a2f40f624960ea4fed705934f860eae4f5cf00324596a7cd1df924f7c1e",
-      "size_bytes": 6765
+      "sha256": "af32365194c1bf1b0410759b9c372ca91015a6b4763af6f61361ecf963892775",
+      "size_bytes": 6274
     },
     {
       "file": "occupations.xlsx",
-      "sha256": "873b708e82fbb4d0bd6f682b6cafd5200e0fb0f8ef7715bfdef67eba3bdf17f7",
-      "size_bytes": 6816
+      "sha256": "45c3a70682ae57eacde7555b8ac0832acf0e874c57a6c8d8b6b73cf772e1026c",
+      "size_bytes": 6126
     },
     {
       "file": "personality.xlsx",
-      "sha256": "6f7652d754945cc8a47f0745ad1a75504bc547d73494dde9450bd86364591b83",
-      "size_bytes": 6681
+      "sha256": "2df8ab7595955613aabade666e5109702f407b583ae96eef69607d3038470fa2",
+      "size_bytes": 6224
     },
     {
       "file": "social_behaviour.xlsx",
-      "sha256": "9a5abbd1e5dcd9ffb97944bc972419f0ffda6a4636ae1caa22efe902b6031a10",
-      "size_bytes": 6787
+      "sha256": "06570f6bc1333e13f7510b869fd3d7fede95d88a470ae02fd22bee4a0790c842",
+      "size_bytes": 6312
     },
     {
       "file": "technology.xlsx",
-      "sha256": "fe371c3405e4dcb561e9027d2765a61baf1d9861020649c3e9712d16926f7b18",
-      "size_bytes": 6581
+      "sha256": "e04aee84d4c9937323c2f3616593ffd99def8b6580c3546fda693e96d9e51735",
+      "size_bytes": 6233
     }
   ]
 }

@@ -2,8 +2,8 @@
 
 **Project root after local checkout:** `E:\model counsel`  
 **Repository:** `brinesolution/ModelCouncil`  
-**Current development branch:** `phase-1-vertical-slice`  
-**Current phase:** Phase 1 web simulation vertical slice implemented and under merge-safety verification  
+**Current development branch:** local `main` checkout; Phase 2 changes are currently local-only and not pushed
+**Current phase:** Phase 2J reliability repair program — 2J-A semantic correctness/audit privacy is being implemented first, followed only after its green gate by 2J-B active population context, 2J-C social dynamics calibration, and 2J-D conversation/provider validation; Phase 2I Advanced controls remain available for fast debugging.
 **Project version:** `0.1.x` pre-release  
 **Purpose:** Read this file before architecture-level changes.
 
@@ -23,12 +23,14 @@ All current outputs are synthetic experiments. They must not be described as sta
 
 ## 2. Current implemented pipeline
 
-The `phase-1-vertical-slice` branch implements this complete browser/API/simulation path:
+The merged Phase 1 implementation plus the current local Phase 2 work provides this browser/API/simulation path:
 
 ```text
 Next.js product-pitch form
         ↓
 FastAPI POST /api/v1/simulations/run
+        ↓
+resolve preset or validated Advanced effective configuration
         ↓
 Excel-backed TraitRepository
         ↓
@@ -42,6 +44,8 @@ Capacity-limited conversation scheduler
         ↓
 Deterministic background semantic conversations
         ↓
+Deterministic natural-English transcript rendering
+        ↓
 TopicEvidence for both participants
         ↓
 Synchronous round aggregation
@@ -50,12 +54,25 @@ One AgentStateDelta commit per agent
         ↓
 Derived overall opinion + purchase intent
         ↓
-Timeline / sampled network / selected conversation DTOs
+Compact round replay checkpoint
         ↓
-Browser results screen
+[after all numerical rounds]
+conversation importance ranking
+        ↓
+bounded Economy / Balanced / Full render policy
+        ↓
+optional post-simulation DeepSeek wording with fail-closed fallback
+        ↓
+Timeline / replay network / selected conversation DTOs
+        ↓
+Dashboard analytics serialization
+        ↓
+Six-chart 3×2 analytics matrix
+        ↓
+Industrial results command center + round replay + conversation log
 ```
 
-Phase 1 intentionally does **not** require a live LLM call. The DeepSeek provider exists behind the LLM abstraction for the next phase.
+Live LLM rendering is intentionally outside the synchronous numerical round loop. A configured key does not spend credits unless `DEEPSEEK_LIVE_ENABLED=true`; tests always disable/replace the live provider. The local project `.env` is currently live-enabled with a hard per-run ceiling of 10 requests, while `.env.example` remains disabled by default for fresh checkouts.
 
 ---
 
@@ -123,10 +140,11 @@ data/traits/
 └── README.md
 ```
 
-`catalog.source.json` is the canonical reproducible seed definition for the initial workbooks. `scripts/generate_trait_workbooks.py` generates the `.xlsx` files. `catalog.manifest.json` records size/SHA-256 integrity metadata for each workbook.
+`catalog.source.json` is the canonical reproducible seed definition for the initial workbooks. Phase 2A requires **exactly 10 rows in every trait category** with unique stable keys. `scripts/generate_trait_workbooks.py` now rejects any category that does not contain exactly 10 rows. The `.xlsx` files are generated derivatives, while `catalog.manifest.json` records size/SHA-256 integrity metadata for each workbook.
 
 Regression tests verify:
 
+- every source category contains exactly 10 rows and has unique keys;
 - every declared workbook physically exists;
 - no undeclared workbook is silently added;
 - workbook bytes match manifest hashes/sizes;
@@ -220,13 +238,17 @@ This prevents unrealistic behavior where all K neighbours talk simultaneously or
 
 ---
 
-## 10. Phase 1 semantic conversations
+## 10. Semantic conversations and Phase 2 language rendering
 
-`simulation/conversation/background_engine.py` generates deterministic semantic interaction payloads. These interactions have topics/stances/argument strengths but do not need natural-language text.
+`simulation/conversation/background_engine.py` generates deterministic semantic interaction payloads plus deterministic background wording. The semantic payload remains authoritative for state changes.
 
-`ConversationRouter` currently keeps Phase 1 on the background engine. Live LLM promotion is intentionally reserved for Phase 2.
+Each `ConversationLedgerEntry` stores compact start-of-round participant language profiles, edge metadata, and per-agent `ConsumerPriceContext`. The price context carries cadence, affordability, price pressure, and the current Python-owned price stance; its stance is refreshed from the current belief every round so wording cannot use stale baseline price sentiment. Demographic labels remain available for identity/context but are not numerical affordability inputs.
 
-The user-facing dialogue modes (`economy`, `balanced`, `full`) remain part of the API contract for future routing/cost control, but Phase 1 does not yet spend DeepSeek credits per interaction.
+`simulation/conversation/dialogue_realism.py` derives `SpeakingStyle` from normalized personality/state traits and `DialogueShape` from already-fixed semantic messages. Completed prior-round topic history creates a soft repetition penalty without changing same-round synchronous snapshot semantics. `background_language.py` uses seven stance-strength bands and the same current price context for deterministic wording.
+
+`simulation/conversation/importance.py` assigns a deterministic bounded importance score; `dialogue_policy.py` applies Economy/Balanced/Full budgets; `render_pipeline.py` upgrades selected transcripts after the numerical simulation. The provider prompt forbids occupation/age/student affordability inference and unsupported competitor/free-alternative/gym/market/review claims, while allowing normally 1–2 sentence turns and up to 3 sentences when useful. Initial synchronous render budgets remain Economy 5% capped at 6, Balanced 20% capped at 20, and Full capped at 48 before the stricter normal global live ceiling.
+
+`simulation/conversation/full_live_renderer.py` is a separate path for `full_live`. It applies no importance selection and no total-request cap: every scheduled ledger entry is attempted unless cancellation stops new worker claims. It uses serial cache priming followed by a fixed bounded worker pool. Provider failure or invalid output keeps the deterministic background transcript and continues.
 
 ---
 
@@ -260,7 +282,13 @@ The aggregator accounts for trust, relationship strength, speaker confidence/inf
 
 ## 12. Product evaluation and purchase intent
 
-`simulation/product/baseline_evaluation.py` creates initial topic beliefs from product knowledge plus consumer traits.
+`simulation/product/semantic_profile.py` deterministically converts user-supplied category/pitch/features into bounded synthetic signals for usefulness, quality, trust, novelty, privacy exposure, complexity, recurring cost, support/reliability, claim uncertainty, and category family. These are explicit modeling assumptions, not verified product facts or empirical market calibration.
+
+`simulation/product/pricing.py` owns billing cadence (`auto`, `one_time`, `monthly`, `yearly`), deterministic Auto inference, synthetic category × cadence INR anchors, and `ConsumerPriceContext`. Amount/reference ratio establishes the population price baseline; centered income, price-sensitivity, and need terms create individual disagreement. Occupation, age, student status, locale, and other demographic labels do not participate in numerical affordability. Synthetic anchors must never be presented as observed market averages.
+
+`simulation/product/fit.py` combines the semantic profile with each consumer to derive category-conditioned need, affordability, adoption fit, risk fit, privacy concern, and the canonical cadence-aware price context.
+
+`simulation/product/baseline_evaluation.py` creates neutral-centered first-exposure beliefs from product evidence, consumer-product fit, correlated individual outlook, and bounded seeded variation. The same pitch can therefore create advocates and skeptics based on fit; no fixed negative quota exists.
 
 `simulation/behaviour/purchase.py` separately derives:
 
@@ -280,6 +308,10 @@ FastAPI routes:
 - `GET /api/v1/health`
 - `POST /api/v1/simulations/preview`
 - `POST /api/v1/simulations/run`
+- `POST /api/v1/simulations/full-live`
+- `GET /api/v1/simulations/full-live/{job_id}`
+- `GET /api/v1/simulations/full-live/{job_id}/result`
+- `POST /api/v1/simulations/full-live/{job_id}/cancel`
 
 Run responses include:
 
@@ -289,7 +321,9 @@ Run responses include:
 - summary;
 - timeline;
 - bounded sampled network DTO;
-- selected conversation metadata;
+- selected conversation metadata including importance/LLM selection;
+- dialogue-render statistics;
+- compact round replay checkpoints with active sampled conversation edges;
 - trait source.
 
 Routes should remain thin. Domain work belongs in `simulation/`; orchestration/serialization belongs in backend services.
@@ -301,11 +335,14 @@ Next.js App Router currently provides:
 - landing page;
 - `/simulate` pitch/config form;
 - `/simulations/result` result view;
+- `/simulations/full-live/[jobId]` Full Live progress/cancellation console;
 - summary cards;
 - code-native opinion timeline;
-- bounded network preview.
+- replayable network with a round slider;
+- active conversation-edge highlighting;
+- readable conversation cards with source/importance metadata.
 
-The current network view is a preview, not the final animated conversation map.
+The network still uses a bounded sampled layout rather than a production-scale zoomable graph renderer.
 
 ---
 
@@ -320,11 +357,21 @@ DEEPSEEK_API_KEY=
 DEEPSEEK_BASE_URL=https://api.deepseek.com
 DEEPSEEK_MODEL=deepseek-v4-flash
 DEEPSEEK_THINKING=disabled
+DEEPSEEK_LIVE_ENABLED=false
+DEEPSEEK_RENDER_CONCURRENCY=4
+DEEPSEEK_FULL_LIVE_CONCURRENCY=4
+DEEPSEEK_MAX_LIVE_REQUESTS_PER_RUN=10
+DEEPSEEK_CACHE_PRIME_REQUESTS=2
+DEEPSEEK_CACHE_HIT_USD_PER_MILLION=0.0028
+DEEPSEEK_CACHE_MISS_USD_PER_MILLION=0.14
+DEEPSEEK_OUTPUT_USD_PER_MILLION=0.28
 ```
 
-Never commit the real key. `.env` and frontend local env files are Git-ignored.
+Never commit the real key. `.env` and frontend local env files are Git-ignored. `DEEPSEEK_LIVE_ENABLED` is an explicit cost/safety switch. The project-root `.env` is the authoritative local source for `DEEPSEEK_API_KEY`; ModelCouncil resolves that key ahead of a stale inherited Windows `DEEPSEEK_API_KEY`, while runtime controls keep normal environment-variable precedence.
 
-Phase 2 should use the LLM selectively for visible/important dialogue, message interpretation, objections, semantic retelling, and aggregate explanations. The numerical engine remains authoritative.
+Phase 2 uses language models only after numerical state is committed. Ordinary Economy/Balanced/Full modes remain selective/bounded. The separate `full_live` mode requires explicit UI confirmation and runs through in-process asynchronous jobs; it attempts every scheduled conversation with no hidden total-call cap. Full Live now resolves an explicit `(provider, model)` through a backend catalog/factory. DeepSeek uses configured cloud credentials/concurrency/pricing; Ollama Local discovers downloaded models through the server-local Ollama API and uses its own local concurrency/zero configured API pricing. The browser never connects to Ollama directly. See ADR-004, ADR-006, and ADR-007.
+
+Live validation on 2026-08-17 succeeded with a 250-agent, 2-round Economy run: 100 semantic conversations, 5 selected DeepSeek renders, 5 successful, 0 fallbacks, 768 cache-hit tokens, 1,975 cache-miss tokens, 388 output tokens, 28.0% aggregate cache-hit ratio, approximately 1.80 s average render latency, and approximately $0.000387 estimated API cost using the configured V4 Flash rates.
 
 ---
 
@@ -369,23 +416,78 @@ Current synchronous workload bounds are a safety guard, not a substitute for pro
 
 No real `.env`, `.venv`, `node_modules`, or `.next` artifacts should ever be tracked.
 
-Product ideas may be confidential. Future external LLM usage must be transparent/configurable and must avoid unnecessary logging of user product content.
+Product ideas may be confidential. External LLM usage must remain transparent/configurable. Phase 2H intentionally stores product content and synthetic run state in local Git-ignored audit files for debugging, so `logs/model-runs/` must be treated as sensitive local data even though credentials/private model reasoning are redacted.
 
 ---
 
 ## 17. Phase 2 direction
 
-Next major development stage:
+Implemented locally through Phase 2I plus the current Phase 2J-A semantic-correctness slice:
 
-1. selective DeepSeek-backed language conversations;
-2. structured transcript schema;
-3. agent conversation/memory summaries;
-4. visible active conversation edges on the network map;
-5. click-to-view conversation transcript;
-6. map replay by simulation round;
-7. cost-aware `economy` / `balanced` / `full` dialogue routing;
-8. stronger segment/product analytics;
-9. later product image/document ingestion into normalized product knowledge.
+1. deterministic importance scoring;
+2. bounded `economy` / `balanced` / `full` dialogue routing;
+3. post-simulation DeepSeek transcript rendering with a global live-request ceiling;
+4. stable-prefix cache optimization plus serial cache priming;
+5. provider usage/cache/latency/cost telemetry;
+6. fail-closed deterministic transcript fallback;
+7. project `.env` DeepSeek-key precedence over stale inherited Windows key values;
+8. compact round checkpoints;
+9. round-slider network replay;
+10. active conversation-edge highlighting;
+11. live provider/token/cache metrics in the result UI;
+12. centralized industrial-skeuomorphic design tokens and physical interaction states;
+13. redesigned Home, Simulation, and Results surfaces under one visual system;
+14. dashboard analytics API for full-population purchase-intent bins and semantic topic pressure;
+15. six semantic charts in a strict 3×2 desktop matrix: final sentiment, purchase-intent distribution, opinion/purchase trend, conversation volume, topic pressure, and influence-vs-purchase scatter;
+16. dark technical analytics instruments mounted on the light graphite chassis, with 2×3 tablet and 1×6 mobile fallbacks;
+17. explicit `full_live` dialogue mode that never executes through the ordinary synchronous endpoint;
+18. uncapped all-scheduled-conversation renderer with fixed worker concurrency and cancellation-aware work claiming;
+19. in-memory Full Live job state machine: queued → simulating → rendering/cancelling → completed/cancelled/failed;
+20. Full Live start/status/result/cancel API lifecycle plus actual token/cache/latency/cost progress telemetry;
+21. warning modal with conservative call upper bound and typed `FULL LIVE` acknowledgement above 5,000 calls;
+22. Full Live progress route with cancellation and completed-result handoff into the normal Results dashboard;
+23. provider catalog/factory boundary with stable `deepseek` and `ollama` IDs;
+24. server-side `GET /api/v1/llm/providers` discovery for configured DeepSeek and installed Ollama models;
+25. native Ollama `/api/chat` provider implementing the same semantic-preserving `LLMProvider` protocol;
+26. Full-Live-only source/model selector, provider-aware warning copy, and provider/model progress/result metadata;
+27. Ollama local-compute telemetry semantics (`N/A` cache reuse, zero configured API pricing) without changing numerical simulation state;
+28. deterministic `ProductSemanticProfile` derived from pitch/category/features rather than an LLM scorer;
+29. `ConsumerProductFit` with category-conditioned need, affordability, privacy concern, adoption/risk fit, and category-relative price pressure;
+30. neutral-centered product-sensitive baseline beliefs capable of genuine positive/neutral/negative segments without forced quotas;
+31. disagreement-, relevance-, and objection-aware conversation topic selection across all six topics;
+32. bounded moderate-disagreement information factor while preserving synchronous state commits and extreme-contradiction damping;
+33. purchase-intent rework with explicit affordability/price, negative-trust/risk-aversion, and privacy penalties;
+34. signed topic analytics exposing support, criticism, and net conversation pressure while retaining magnitude fields for compatibility;
+35. first-class billing cadence with deterministic Auto inference and manual override;
+36. synthetic category × cadence price calibration plus `ConsumerPriceContext` with demographic-invariant affordability;
+37. current-round price stance refresh so language rendering cannot use stale baseline price sentiment;
+38. deterministic `SpeakingStyle`, semantic `DialogueShape`, and completed-prior-round topic repetition memory;
+39. seven-band deterministic fallback wording with price-aware, stereotype-free phrasing;
+40. LLM renderer anti-stereotype/anti-invention contract and natural variable-length turns;
+41. diversity-aware 12-card replay selection while preserving raw importance and Full Live coverage;
+42. Simulation billing selector plus resolved billing metadata in API/Results;
+43. per-run `logs/model-runs/<timestamp>.jsonl` canonical append-only audit streams plus matching Markdown summaries;
+44. explicit `RunAuditSink` boundary with null, memory, and thread-safe JSONL implementations;
+45. Excel workbook SHA-256/schema/source-row provenance plus per-agent sampled source records and final normalized traits;
+46. formula-versioned price/fit/baseline, scheduler/topic, semantic argument, bounded-confidence, state-delta/commit, and purchase-intent trace events;
+47. weighted KNN vectors and edge-formation audit plus every semantic conversation/message for every round;
+48. exact safe language-render prompt/schema and DeepSeek/Ollama HTTP request/visible-response tracing with per-call correlation IDs;
+49. recursive credential/private-reasoning redaction plus exact configured DeepSeek-key scrubbing from echoed provider response strings;
+50. Full Live thread-safe concurrent audit writes, explicit cancellation-request/terminal events, degraded writer behavior, and audit-on/off deterministic-equivalence tests;
+51. opt-in Advanced simulation controls layered on top of Small/Standard/Large rather than introducing a separate custom engine or population mode;
+52. one backend effective-configuration resolver shared by preview, ordinary simulation, Full Live bounds, Results, and Phase 2H audit metadata;
+53. Advanced hard validation for population/K/chat capacity/rates/minutes/rounds plus the shared 100,000-conversation conservative workload ceiling;
+54. exact Full Live upper-bound estimation using `floor(population × max chats / 2) × rounds` from effective configuration;
+55. industrial Advanced UI control bank with PRESET/ADVANCED Run Console metadata, immediate browser validation, and tiny 20–100 agent debug-run support;
+56. deterministic-equivalence regression proving registered-preset values and equivalent Advanced values produce the same numerical simulation;
+57. explicit-category-authoritative product taxonomy with stable family + product-form resolution;
+58. one canonical contextual evidence normalizer/matcher covering hyphenation, local negation, exclusions, and non-recurring qualifiers;
+59. structured reliability, serviceability, safety, data-practice, and cancellation-friction signals mapped into existing quality/trust/privacy/risk-fit mechanics;
+60. form-aware synthetic price-reference catalog so power banks, earbuds, robot vacuums, cameras, software forms, beauty devices, and fragrance do not share overly broad anchors;
+61. Ollama `thinking` response fields treated as private reasoning and omitted from Phase 2H audit persistence;
+62. twelve-family × three-severity semantic regression plus same-seed numerical product comparisons.
+
+The active next sequence is fixed by the Phase 2J program: finish/verify 2J-A, then 2J-B active population/life context, then 2J-C social dynamics, then 2J-D provider-language validation/replay observability. Do not tune later layers to compensate for an earlier semantic/population defect.
 
 Multilingual support should start with English / ordinary Indian English. Hindi, Hinglish, and additional Indian-language/code-switch profiles are later extensions.
 
@@ -406,8 +508,6 @@ Multilingual support should start with English / ordinary Indian English. Hindi,
 
 ---
 
-## 19. Branch handoff
+## 19. Local-development handoff
 
-`phase-1-vertical-slice` is intended to be reviewed and manually merged by the project owner. Do not automatically merge it into `main` without explicit instruction.
-
-After merge, the user will pull the merged `main` branch to `E:\model counsel` and continue local development from there.
+Phase 1 has already been merged into `main`. The current Phase 2A–2I work is intentionally uncommitted and local in `E:\model counsel`. Do not commit, push, or open a pull request unless the project owner explicitly requests it.

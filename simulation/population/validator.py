@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from simulation.population.compatibility import CompatibilityRuleError, parse_compatibility_rule
 from simulation.population.trait_repository import TraitCatalog
 
 
@@ -31,6 +32,12 @@ def validate_trait_catalog(catalog: TraitCatalog) -> None:
                     f"category '{category_key}' value '{value.key}' has invalid probability"
                 )
             probability_total += value.probability
+
+            if category_key == "compatibility_rules":
+                try:
+                    parse_compatibility_rule(value)
+                except CompatibilityRuleError as exc:
+                    raise TraitCatalogValidationError(str(exc)) from exc
 
             for attribute_name, attribute_value in value.attributes.items():
                 if attribute_name.endswith(("_min", "_max")):

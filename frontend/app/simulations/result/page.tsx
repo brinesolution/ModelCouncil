@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useMemo, useSyncExternalStore } from "react";
 
 import "../../results.css";
-import { NetworkPreview } from "@/features/simulation/network-preview";
-import { OpinionTimeline } from "@/features/simulation/opinion-timeline";
+import { AnalyticsGrid } from "@/features/analytics/analytics-grid";
+import { ConversationLedger } from "@/features/simulation/conversation-ledger";
 import { ResultsSummary } from "@/features/simulation/results-summary";
+import { SimulationReplay } from "@/features/simulation/simulation-replay";
 import type { SimulationRunResponse } from "@/types/results";
 
 const STORAGE_KEY = "modelcouncil:last-simulation";
@@ -33,9 +34,27 @@ export default function SimulationResultPage() {
     return (
       <main className="pageShell">
         <section className="resultSection emptyResult">
+          <span className="techLabel">No local run detected</span>
           <h1>No simulation result in this tab</h1>
-          <p className="muted">Run a product simulation first. Results are kept in this browser tab for the current Phase 1 implementation.</p>
+          <p>
+            Run a product simulation first. Results are stored in this browser tab for the current local implementation.
+          </p>
           <Link className="button linkButton" href="/simulate">Create simulation</Link>
+        </section>
+      </main>
+    );
+  }
+
+  if (!result.analytics) {
+    return (
+      <main className="pageShell">
+        <section className="resultSection emptyResult">
+          <span className="techLabel">Stored result schema outdated</span>
+          <h1>Run the simulation again for the new analytics dashboard</h1>
+          <p>
+            This browser tab contains a result created before the six-chart analytics payload was added. Re-running the same seeded configuration will generate the new response shape.
+          </p>
+          <Link className="button linkButton" href="/simulate">Run updated simulation</Link>
         </section>
       </main>
     );
@@ -44,30 +63,20 @@ export default function SimulationResultPage() {
   return (
     <main className="pageShell resultsPage">
       <div className="resultNav">
-        <Link href="/simulate" className="textLink">← New simulation</Link>
-        <span className="muted">Seed {result.seed} · {result.rounds} rounds · K={result.summary.base_k}</span>
+        <Link href="/simulate" className="consoleBackLink">← New simulation</Link>
+        <div className="resultRunMeta">
+          <span className="runMetaLight" aria-hidden="true" />
+          <span>SEED {result.seed}</span>
+          <span>R{result.rounds}</span>
+          <span>K{result.summary.base_k}</span>
+          <span>{result.population_mode.toUpperCase()}</span>
+        </div>
       </div>
-      <ResultsSummary result={result} />
-      <OpinionTimeline timeline={result.timeline} />
-      <NetworkPreview network={result.network} />
 
-      <section className="resultSection" aria-labelledby="conversation-title">
-        <div className="resultHeader">
-          <div>
-            <h2 id="conversation-title">Conversation ledger sample</h2>
-            <p className="muted">Phase 1 stores semantic background conversations. Language transcripts are added by the shared LLM layer in the next dialogue phase.</p>
-          </div>
-        </div>
-        <div className="conversationList">
-          {result.selected_conversations.length ? result.selected_conversations.map((conversation) => (
-            <div className="conversationRow" key={conversation.conversation_id}>
-              <span>Round {conversation.round}</span>
-              <strong>Agent {conversation.agent_a_id} ↔ Agent {conversation.agent_b_id}</strong>
-              <span className="muted">{conversation.topics.join(", ") || "general product discussion"}</span>
-            </div>
-          )) : <p className="muted">No conversations were scheduled in this run.</p>}
-        </div>
-      </section>
+      <ResultsSummary result={result} />
+      <AnalyticsGrid result={result} />
+      <SimulationReplay network={result.network} replay={result.replay} />
+      <ConversationLedger conversations={result.selected_conversations} />
     </main>
   );
 }

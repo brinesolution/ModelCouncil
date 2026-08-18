@@ -7,6 +7,7 @@ import numpy as np
 from sklearn.neighbors import NearestNeighbors
 
 from simulation.domain.agent import ConsumerAgent
+from simulation.audit.logger import RunAuditSink
 
 DEFAULT_FEATURE_WEIGHTS: dict[str, float] = {
     "price_sensitivity": 0.17,
@@ -35,6 +36,7 @@ def build_knn_graph(
     weak_tie_rate: float = 0.05,
     seed: int = 42,
     feature_weights: Mapping[str, float] | None = None,
+    audit: RunAuditSink | None = None,
 ) -> nx.Graph:
     if len(agents) < 2:
         raise ValueError("At least two agents are required to build a social graph.")
@@ -91,5 +93,52 @@ def build_knn_graph(
             interaction_count=0,
         )
         added += 1
+
+    if audit is not None:
+        audit.emit(
+            "network.built",
+            {
+                "node_count": graph.number_of_nodes(),
+                "edge_count": graph.number_of_edges(),
+                "requested_k": k,
+                "effective_k": effective_k,
+                "weak_tie_rate": weak_tie_rate,
+                "weak_tie_edges": sum(
+                    1 for _, _, data in graph.edges(data=True) if data.get("weak_tie")
+                ),
+                "feature_weights": dict(weights),
+            },
+        )
+        for agent, vector in zip(agents, matrix, strict=True):
+            audit.emit(
+                "network.agent_vector",
+                {
+                    "agent_id": agent.agent_id,
+                    "raw_features": {
+                        **agent.traits.as_dict(),
+                        "income_score": agent.income_score,
+                    },
+                    "weighted_vector": [float(value) for value in vector],
+                    "feature_order": list(weights),
+                },
+                agent_ids=[agent.agent_id],
+            )
+        for source_id, target_id, data in graph.edges(data=True):
+            weak_tie = bool(data.get("weak_tie", False))
+            similarity = float(data.get("similarity", 0.0))
+            knn_distance = (
+                float(-np.log(similarity)) if not weak_tie and similarity > 0 else None
+            )
+            audit.emit(
+                "network.edge",
+                {
+                    "source": int(source_id),
+                    "target": int(target_id),
+                    "formation_source": "weak_tie" if weak_tie else "knn",
+                    "knn_distance": knn_distance,
+                    **dict(data),
+                },
+                agent_ids=[int(source_id), int(target_id)],
+            )
 
     return graph

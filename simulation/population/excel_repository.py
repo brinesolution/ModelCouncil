@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
+import hashlib
 
 import pandas as pd
 
 from simulation.population.trait_repository import TraitCatalog, TraitCategory, TraitValue
 from simulation.population.validator import validate_trait_catalog
+from simulation.audit.logger import RunAuditSink
 
 REQUIRED_COLUMNS = {"key", "weight", "enabled"}
 RESERVED_COLUMNS = {"key", "label", "weight", "enabled"}
@@ -20,21 +22,42 @@ class ExcelTraitRepository:
     def __init__(self, root: Path):
         self.root = Path(root)
 
-    def load_catalog(self, validate: bool = True) -> TraitCatalog:
+    def load_catalog(
+        self,
+        validate: bool = True,
+        audit: RunAuditSink | None = None,
+    ) -> TraitCatalog:
         if not self.root.exists():
             raise TraitWorkbookError(f"trait directory does not exist: {self.root}")
 
         categories: dict[str, TraitCategory] = {}
         for workbook_path in sorted(self.root.glob("*.xlsx")):
-            category = self._load_workbook(workbook_path)
+            if workbook_path.name.startswith("~$"):
+                continue
+            category = self._load_workbook(workbook_path, audit=audit)
             categories[category.key] = category
 
         catalog = TraitCatalog(categories=categories)
         if validate:
             validate_trait_catalog(catalog)
+        if audit is not None:
+            audit.emit(
+                "traits.catalog_loaded",
+                {
+                    "root": str(self.root),
+                    "category_count": len(categories),
+                    "categories": sorted(categories),
+                    "validated": validate,
+                },
+            )
         return catalog
 
-    def _load_workbook(self, path: Path) -> TraitCategory:
+    def _load_workbook(
+        self,
+        path: Path,
+        *,
+        audit: RunAuditSink | None = None,
+    ) -> TraitCategory:
         try:
             frame = pd.read_excel(path, sheet_name="Traits")
         except ValueError as exc:
@@ -81,11 +104,25 @@ class ExcelTraitRepository:
                 )
             )
 
-        return TraitCategory(
+        category = TraitCategory(
             key=category_key,
             values=tuple(values),
             schema_version=schema_version,
         )
+        if audit is not None:
+            audit.emit(
+                "traits.workbook",
+                {
+                    "filename": path.name,
+                    "category": category_key,
+                    "schema_version": schema_version,
+                    "file_size_bytes": path.stat().st_size,
+                    "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                    "active_row_count": len(values),
+                    "keys": [value.key for value in values],
+                },
+            )
+        return category
 
     @staticmethod
     def _read_metadata(path: Path) -> dict[str, Any]:

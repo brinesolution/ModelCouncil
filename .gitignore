@@ -33,6 +33,10 @@ pnpm-debug.log*
 Thumbs.db
 desktop.ini
 
+# Microsoft Office lock files
+~$*.xlsx
+~$*.xls
+
 # Runtime / generated data
 data/generated/*
 !data/generated/.gitkeep
@@ -42,3 +46,50 @@ logs/
 # Build artifacts
 dist/
 build/
+
+# AI coding assistants / local agent state
+.codex/
+.claude/
+.gemini/
+.cursor/
+.continue/
+.windsurf/
+.roo/
+.cline/
+.chatgpt/
+.copilot/
+.mcp/
+.mcp.json
+.aider*
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+.cursorignore
+.cursorindexingignore
+.windsurfrules
+.clinerules
+.github/copilot-instructions.md
+.github/prompts/
+.github/agents/
+
+# Local AI working notes / generated agent documentation
+context.md
+project coding.md
+docs/superpowers/
+docs/diagnostics/
+
+# AI conversation / prompt / trace scratch artifacts
+.ai/
+.ai-work/
+.ai-artifacts/
+ai-traces/
+agent-traces/
+*.ai-trace.*
+*.agent-trace.*
+*.llm-trace.*
+*.prompt-trace.*
+*.chatlog
+*.transcript.local.*
+
+# Windows reserved/scratch device artifact
+/NUL

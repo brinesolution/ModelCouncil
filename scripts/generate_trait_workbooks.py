@@ -25,8 +25,10 @@ def _style_header(sheet, columns: int) -> None:
 
 def _write_workbook(category: str, payload: dict) -> Path:
     rows = payload["rows"]
-    if not rows:
-        raise ValueError(f"Trait category {category!r} has no rows")
+    if len(rows) != 10:
+        raise ValueError(
+            f"Trait category {category!r} must contain exactly 10 rows; got {len(rows)}"
+        )
 
     columns = list(rows[0])
     if any(set(row) != set(columns) for row in rows):

@@ -58,6 +58,39 @@ def test_higher_product_need_increases_usefulness_belief():
     assert high_belief.usefulness > low_belief.usefulness
 
 
+def test_billing_aware_price_belief_distinguishes_cheap_monthly_and_expensive_monthly():
+    agent = make_agent(price_sensitivity=0.5, product_need=0.7)
+    cheap = ProductKnowledge(
+        name="AI Fitness Coach",
+        category="Fitness Technology",
+        pitch="Personalized workout and nutrition coaching.",
+        price=200,
+        billing_cadence="monthly",
+    )
+    expensive = ProductKnowledge(
+        name="AI Fitness Coach",
+        category="Fitness Technology",
+        pitch="Personalized workout and nutrition coaching.",
+        price=1500,
+        billing_cadence="monthly",
+    )
+    one_time = ProductKnowledge(
+        name="AI Fitness Coach",
+        category="Fitness Technology",
+        pitch="Personalized workout and nutrition coaching.",
+        price=1500,
+        billing_cadence="one_time",
+    )
+
+    cheap_belief = evaluate_baseline(agent, cheap, seed=17)
+    expensive_belief = evaluate_baseline(agent, expensive, seed=17)
+    one_time_belief = evaluate_baseline(agent, one_time, seed=17)
+
+    assert cheap_belief.price > 0.10
+    assert cheap_belief.price > expensive_belief.price + 0.45
+    assert one_time_belief.price > expensive_belief.price + 0.45
+
+
 def test_baseline_evaluation_is_reproducible_for_same_seed_and_agent():
     agent = make_agent()
     product = ProductKnowledge(name="Test", pitch="A useful productivity service.")

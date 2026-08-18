@@ -25,9 +25,7 @@ At the start of round `t` the engine has:
 5. Apply pair cooldowns
 6. Score candidate edges
 7. Capacity-aware conversation matching
-8. Route each selected pair
-   - background mathematical interaction, or
-   - LLM language interaction
+8. Generate deterministic semantic interaction for each selected pair
 9. Validate semantic messages/claims
 10. Build influence ledger by listener/topic
 11. Aggregate all evidence synchronously
@@ -38,7 +36,15 @@ At the start of round `t` the engine has:
 16. Apply memory/relationship changes
 17. Commit S(t+1)
 18. Calculate round analytics
-19. Save checkpoint if configured
+19. Save compact replay checkpoint
+
+After all numerical rounds complete:
+
+20. Score conversation importance
+21. Apply Economy/Balanced/Full language-render budget
+22. Optionally render selected transcripts through the configured LLM provider
+23. Fail closed to deterministic transcript on any provider/output error
+24. Serialize replay, dialogue statistics, and selected conversation views
 ```
 
 ## Candidate network versus active interaction
@@ -69,7 +75,7 @@ All interactions read the same `S(t)` state. No conversation should permanently 
 
 This prevents code iteration order from acting like an invisible social rule.
 
-The initialization aggregator is already pure: it returns `RoundAggregation(belief_updates, confidence_delta)` without mutating the input agent. When the full round engine is implemented, this should be promoted into a complete `AgentStateDelta` and committed in a separate end-of-round stage.
+The implemented aggregator is pure: it returns `RoundAggregation(belief_updates, confidence_delta)` without mutating the input agent. `SimulationEngine` converts this into `AgentStateDelta` values and commits them only after every conversation in the round has been evaluated from the frozen snapshot.
 
 ## Topic evidence
 
@@ -142,7 +148,7 @@ Purchase intent is recomputed after belief/opinion changes. It is not directly c
 
 A visible transcript and the semantic state effect are related but separate records.
 
-An LLM-generated transcript must not be considered authoritative state. The semantic payload is validated and passed through domain influence rules.
+An LLM-generated transcript is not authoritative state. In Phase 2, domain influence rules run first from deterministic semantic messages; optional language rendering occurs only after the numerical simulation has completed. See ADR-004.
 
 ## Failure behavior
 
