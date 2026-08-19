@@ -181,7 +181,7 @@ _TOPIC_TEMPLATES: dict[str, dict[str, tuple[str, ...]]] = {
         "neutral": (
             "I would check the privacy details before deciding either way.",
             "I am neutral on privacy until I know more about the controls.",
-            "The privacy side is something I would review, but I do not have a strong view yet.",
+            "The privacy side is something I would check, but I do not have a strong view yet.",
         ),
         "mild_positive": (
             "The privacy side seems reasonably acceptable to me.",
