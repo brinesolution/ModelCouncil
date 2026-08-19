@@ -1,5 +1,6 @@
 name: ci
 
+# Keep CI aligned with the repository verification commands documented in README.md.
 on:
   push:
   pull_request:
