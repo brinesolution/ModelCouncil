@@ -17,6 +17,7 @@ class RendererAgentContext:
     detail_band: str
     receptivity_band: str
     knowledge_band: str
+    decision_disposition: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -46,6 +47,7 @@ def renderer_agent_context(agent: AgentLanguageProfile) -> RendererAgentContext:
         detail_band=style.detail,
         receptivity_band=style.receptivity,
         knowledge_band=unit_band(agent.knowledge, low=0.25, high=0.60, labels=("low", "moderate", "high")),
+        decision_disposition=decision_disposition(agent.purchase_intent, agent.overall_opinion),
     )
 
 
@@ -78,6 +80,18 @@ def renderer_semantic_turn(
         argument_band=unit_band(argument_strength, low=0.45, high=0.72, labels=("light", "moderate", "strong")),
         confidence_band=unit_band(confidence, low=0.40, high=0.68, labels=("tentative", "measured", "confident")),
     )
+
+
+def decision_disposition(purchase_intent: float, overall_opinion: float) -> str:
+    if purchase_intent <= 0.25 or (purchase_intent <= 0.32 and overall_opinion <= -0.20):
+        return "pass"
+    if purchase_intent <= 0.42 and overall_opinion < 0.05:
+        return "lean_pass"
+    if purchase_intent >= 0.78 and overall_opinion >= 0.20:
+        return "likely_buy"
+    if purchase_intent >= 0.62 and overall_opinion >= 0.10:
+        return "consider_buy"
+    return "undecided"
 
 
 def unit_band(

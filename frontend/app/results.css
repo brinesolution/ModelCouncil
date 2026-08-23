@@ -428,6 +428,33 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.sentimentFooter {
+  width: 100%;
+  display: grid;
+  gap: 10px;
+}
+
+.sentimentDiagnostic {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 12px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: #8f99a6;
+  font-size: 0.65rem;
+}
+
+.sentimentDiagnostic span {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sentimentDiagnostic strong {
+  color: #f0f3f6;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
 .legendDot {
   width: 8px;
   height: 8px;
@@ -892,10 +919,162 @@
 }
 
 .conversationMeta strong {
-  display: block;
-  margin: 14px 0 6px;
   color: var(--charcoal);
+}
+
+.conversationAgents {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 6px;
+}
+
+.agentProfileTrigger {
+  border: 0;
+  border-bottom: 1px dashed rgba(185, 43, 60, 0.45);
+  background: transparent;
+  color: var(--charcoal);
+  padding: 2px 1px;
+  font: inherit;
   font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+.agentProfileTrigger:hover,
+.agentProfileTrigger:focus-visible,
+.agentProfileTrigger[aria-expanded="true"] {
+  border-bottom-color: var(--red-700);
+  background: rgba(185, 43, 60, 0.07);
+  color: var(--red-700);
+  outline: none;
+}
+
+.agentProfileTriggerCompact {
+  display: inline-block;
+  margin: 0 0 5px;
+  color: var(--red-700);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.63rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.agentProfilePanel {
+  margin-top: 14px;
+  padding: 13px;
+  border: 1px solid rgba(185, 43, 60, 0.18);
+  border-radius: 9px;
+  background: #edf0f3;
+  box-shadow: 3px 3px 7px #bcc4cd, -3px -3px 7px #ffffff;
+}
+
+.agentProfilePanelHeader,
+.agentTraitHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.agentProfilePanelHeader strong {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.9rem;
+}
+
+.agentProfileClose {
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(102, 111, 122, 0.22);
+  border-radius: 7px;
+  background: #dfe4e9;
+  color: #5d6570;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.agentProfileClose:hover,
+.agentProfileClose:focus-visible {
+  color: var(--red-700);
+  outline: 2px solid rgba(185, 43, 60, 0.28);
+}
+
+.agentIdentityGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.agentIdentityGrid > div {
+  min-width: 0;
+  padding: 7px 8px;
+  border-radius: 6px;
+  background: #dde2e7;
+}
+
+.agentIdentityGrid span,
+.agentTraitHeader span,
+.agentTrait span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.61rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.agentIdentityGrid strong {
+  display: block;
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+  font-size: 0.72rem;
+}
+
+.agentTraitHeader {
+  margin-top: 14px;
+  padding-top: 11px;
+  border-top: 1px solid rgba(129, 139, 151, 0.24);
+}
+
+.agentTraitHeader small {
+  color: var(--muted);
+  font-size: 0.6rem;
+}
+
+.agentTraitGrid {
+  display: grid;
+  gap: 7px;
+  margin-top: 9px;
+}
+
+.agentTrait {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 8px;
+  align-items: center;
+}
+
+.agentTrait strong {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.67rem;
+}
+
+.agentTrait i {
+  grid-column: 1 / -1;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #cbd1d8;
+}
+
+.agentTrait i b {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--red-500);
 }
 
 .conversationTopics {
@@ -1093,6 +1272,14 @@
     grid-template-columns: 1fr;
   }
 
+  .agentIdentityGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sentimentDiagnostic {
+    grid-template-columns: 1fr;
+  }
+
   .networkFrame svg {
     min-height: 350px;
   }
@@ -1143,4 +1330,1025 @@
     transition: none;
     animation: none;
   }
+}
+
+@media not all {
+/* ========================================================================== */
+/* DISABLED: MONOCHROME COMIC RESULTS / REPLAY SYSTEM                        */
+/* ========================================================================== */
+
+.pageShell {
+  width: min(1240px, calc(100% - 32px));
+  padding: 42px 0 116px;
+}
+
+.resultsPage {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 38px;
+}
+
+.resultsPage > * {
+  min-width: 0;
+}
+
+.resultNav {
+  min-height: 64px;
+  padding: 8px;
+  border: 4px solid var(--ink);
+  border-radius: 0;
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 7px 7px 0 var(--graphite);
+}
+
+.consoleBackLink {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 2px solid var(--paper);
+  border-radius: 0;
+  color: var(--paper);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: background var(--motion-fast) linear, color var(--motion-fast) linear;
+}
+
+.consoleBackLink:hover {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.resultRunMeta {
+  gap: 0;
+  color: var(--paper);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+}
+
+.resultRunMeta span:not(.runMetaLight) {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border-left: 2px solid var(--paper);
+}
+
+.runMetaLight {
+  width: 11px;
+  height: 11px;
+  margin-inline: 10px;
+  border: 2px solid var(--paper);
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: none;
+}
+
+.resultSection {
+  padding: 32px;
+  border: 4px solid var(--ink);
+  border-radius: 0;
+  background: var(--paper);
+  box-shadow: 8px 8px 0 var(--ink);
+}
+
+.resultSection::after {
+  display: none;
+}
+
+.executiveModule {
+  padding: clamp(26px, 4vw, 44px);
+  background:
+    linear-gradient(to right, transparent 0 72%, rgba(0, 0, 0, 0.055) 72% 72.3%, transparent 72.3%),
+    var(--paper);
+}
+
+.executiveHeader {
+  gap: 34px;
+  margin-bottom: 30px;
+  padding-bottom: 24px;
+  border-bottom: 7px solid var(--ink);
+}
+
+.executiveHeader h1 {
+  max-width: 800px;
+  margin: 10px 0 12px;
+  font-size: clamp(2.8rem, 6vw, 6.5rem);
+  font-weight: 700;
+  line-height: 0.88;
+  letter-spacing: -0.07em;
+  text-transform: uppercase;
+}
+
+.executiveHeader p {
+  color: #343434;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.65;
+}
+
+.executiveStatus {
+  gap: 14px;
+}
+
+.summaryGrid {
+  gap: 16px;
+}
+
+.summaryMetric {
+  position: relative;
+  min-height: 132px;
+  padding: 17px;
+  border: 3px solid var(--ink);
+  border-radius: 0;
+  background: var(--paper);
+  box-shadow: 5px 5px 0 var(--ink);
+}
+
+.summaryMetric:nth-child(even) {
+  background:
+    radial-gradient(circle, rgba(0, 0, 0, 0.18) 1px, transparent 1px) 0 0 / 8px 8px,
+    var(--paper);
+}
+
+.summaryMetric:nth-child(4n) {
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 5px 5px 0 var(--graphite);
+}
+
+.summaryMetric span {
+  color: currentColor;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.summaryMetric strong {
+  color: currentColor;
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-weight: 800;
+}
+
+.dialogueTelemetry {
+  margin-top: 26px;
+  padding: 24px;
+  border: 5px solid var(--ink);
+  border-radius: 0;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.14) 1px, transparent 1px) 0 0 / 10px 10px,
+    var(--ink);
+  color: var(--paper);
+  box-shadow: 8px 8px 0 var(--graphite);
+}
+
+.dialogueTelemetry .techLabel {
+  border-color: var(--paper);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.dialogueTelemetryHeader {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 3px solid var(--paper);
+}
+
+.dialogueTelemetryHeader h2 {
+  color: var(--paper);
+  font-size: 1.25rem;
+  text-transform: uppercase;
+}
+
+.telemetryGrid {
+  border-top: 2px solid var(--paper);
+  border-left: 2px solid var(--paper);
+}
+
+.telemetryGrid > div {
+  border-right: 2px solid var(--paper);
+  border-bottom: 2px solid var(--paper);
+}
+
+.telemetryGrid span,
+.telemetryGrid strong,
+.telemetryNote {
+  color: var(--paper);
+}
+
+.resultDisclaimer {
+  padding-top: 16px;
+  border-top: 2px solid var(--ink);
+  color: #454545;
+}
+
+/* Analytics as a comic page grid */
+.analyticsSection {
+  padding-top: 8px;
+}
+
+.analyticsSectionHeader {
+  align-items: end;
+  padding: 0 0 20px;
+  border-bottom: 7px solid var(--ink);
+}
+
+.analyticsSectionHeader h2 {
+  margin: 8px 0 6px;
+  font-size: clamp(2.4rem, 5vw, 5.2rem);
+  line-height: 0.92;
+  letter-spacing: -0.06em;
+  text-transform: uppercase;
+}
+
+.analyticsSectionHeader p {
+  color: #3e3e3e;
+  font-weight: 500;
+}
+
+.analyticsRunId {
+  padding: 9px 11px;
+  border: 3px solid var(--ink);
+  border-radius: 0;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+
+.analyticsGrid {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 22px;
+  margin-top: 26px;
+}
+
+.analyticsCard {
+  grid-column: span 4;
+  min-height: 405px;
+  border: 4px solid var(--ink);
+  border-radius: 0;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 8px 8px 0 var(--ink);
+  transition: transform var(--motion-panel) ease-out, box-shadow var(--motion-panel) ease-out;
+}
+
+.analyticsCard:nth-child(1),
+.analyticsCard:nth-child(5) {
+  grid-column: span 7;
+}
+
+.analyticsCard:nth-child(2),
+.analyticsCard:nth-child(6) {
+  grid-column: span 5;
+}
+
+.analyticsCard:nth-child(3n) {
+  background:
+    radial-gradient(circle, rgba(0, 0, 0, 0.17) 1px, transparent 1px) 0 0 / 9px 9px,
+    var(--paper);
+}
+
+.analyticsCard:nth-child(4n) {
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 8px 8px 0 var(--graphite);
+}
+
+.analyticsCard:hover {
+  transform: translate(-3px, -5px);
+  box-shadow: 13px 13px 0 var(--ink);
+}
+
+.analyticsCard:nth-child(4n):hover {
+  box-shadow: 13px 13px 0 var(--graphite);
+}
+
+.analyticsCard .panelScrews i {
+  background: currentColor;
+  border-color: currentColor;
+}
+
+.analyticsCardHeader {
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 14px;
+  padding: 24px 22px 14px;
+  border-bottom: 3px solid currentColor;
+}
+
+.chartIndex {
+  width: 38px;
+  height: 38px;
+  border: 3px solid currentColor;
+  border-radius: 0;
+  background: transparent;
+  color: currentColor;
+  box-shadow: 3px 3px 0 currentColor;
+  font-weight: 800;
+}
+
+.analyticsCardHeader h3 {
+  color: currentColor;
+  font-size: 1.05rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.analyticsCardHeader p {
+  color: currentColor;
+  opacity: 0.72;
+}
+
+.analyticsChartBody {
+  min-height: 230px;
+  padding: 16px 18px;
+}
+
+.analyticsCardFooter {
+  min-height: 58px;
+  border-top: 3px solid currentColor;
+  background: transparent;
+}
+
+.analyticsCard .chartAxis,
+.analyticsCard .chartGridLine {
+  stroke: currentColor;
+  opacity: 0.35;
+}
+
+.analyticsCard .chartGridLine {
+  stroke-dasharray: 2 5;
+}
+
+.chartLabel,
+.chartValue,
+.donutCenterLabel,
+.donutCenterValue {
+  fill: currentColor;
+}
+
+.chartFootnote,
+.chartLegendGrid,
+.chartLegendGrid strong,
+.sentimentDiagnostic,
+.sentimentDiagnostic strong {
+  color: currentColor;
+}
+
+.sentimentDiagnostic {
+  border-top: 2px solid currentColor;
+}
+
+.legendDot,
+.legendLine {
+  border-radius: 0;
+}
+
+/* Sentiment and chart semantics use fill/pattern/weight rather than hue. */
+.donutTrack {
+  stroke: var(--silver);
+}
+
+.donutPositive {
+  stroke: var(--ink);
+  background: var(--ink);
+}
+
+.donutNeutral {
+  stroke: var(--graphite);
+  background: var(--graphite);
+  stroke-dasharray: 4 2;
+}
+
+.donutNegative {
+  stroke: var(--silver);
+  background:
+    repeating-linear-gradient(45deg, var(--ink), var(--ink) 2px, var(--paper) 2px, var(--paper) 5px);
+  stroke-dasharray: 1 3;
+}
+
+.analyticsCard:nth-child(4n) .donutPositive {
+  stroke: var(--paper);
+  background: var(--paper);
+}
+
+.analyticsCard:nth-child(4n) .donutNeutral {
+  stroke: var(--silver);
+}
+
+.analyticsCard:nth-child(4n) .donutNegative {
+  stroke: var(--graphite);
+}
+
+.barLow {
+  fill: var(--graphite);
+}
+
+.barMedium {
+  fill: var(--silver);
+}
+
+.barHigh {
+  fill: var(--ink);
+}
+
+.analyticsCard:nth-child(4n) .barHigh {
+  fill: var(--paper);
+}
+
+.trendOpinion,
+.timelineOpinion {
+  stroke: var(--ink);
+  stroke-width: 3;
+}
+
+.trendPurchase,
+.timelinePurchase {
+  stroke: var(--graphite);
+  stroke-width: 3;
+  stroke-dasharray: 7 4;
+}
+
+.analyticsCard:nth-child(4n) .trendOpinion {
+  stroke: var(--paper);
+}
+
+.analyticsCard:nth-child(4n) .trendPurchase {
+  stroke: var(--silver);
+}
+
+.legendOpinion,
+.opinionLine {
+  background: var(--ink);
+}
+
+.legendPurchase,
+.purchaseLine {
+  border: 1px solid currentColor;
+  background: repeating-linear-gradient(90deg, currentColor 0 4px, transparent 4px 7px);
+}
+
+.conversationBar,
+.topicPressureFill {
+  fill: var(--ink);
+  background: var(--ink);
+}
+
+.conversationBarPeak {
+  fill: var(--graphite);
+}
+
+.topicPressureTrack,
+.topicPressureSignedTrack {
+  border: 2px solid currentColor;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.topicPressureZero {
+  background: currentColor;
+}
+
+.topicPressureCriticism {
+  background: repeating-linear-gradient(45deg, currentColor, currentColor 2px, transparent 2px, transparent 6px);
+}
+
+.topicPressureSupport {
+  background: currentColor;
+}
+
+.topicPressureRow,
+.topicPressureLabel,
+.topicPressureSignedTrack,
+.topicPressureCriticism,
+.topicPressureSupport,
+.topicPressureZero,
+.topicPressureSignedRow .topicNetNegative,
+.topicPressureSignedRow .topicNetPositive {
+  color: inherit;
+  border-color: currentColor;
+}
+
+.scatterPositive {
+  fill: var(--ink);
+}
+
+.scatterNeutral {
+  fill: var(--graphite);
+}
+
+.scatterNegative {
+  fill: var(--silver);
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+.analyticsCard:nth-child(4n) .scatterPositive {
+  fill: var(--paper);
+}
+
+/* Replay controls */
+.replaySection {
+  background:
+    linear-gradient(90deg, transparent 49.85%, rgba(0, 0, 0, 0.08) 50%, transparent 50.15%) 0 0 / 34px 34px,
+    var(--paper);
+}
+
+.replayControls {
+  gap: 18px;
+  padding-bottom: 22px;
+  border-bottom: 5px solid var(--ink);
+}
+
+.replayControls h2 {
+  font-size: clamp(1.9rem, 3.5vw, 3.4rem);
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+.replayControls p {
+  color: #3d3d3d;
+}
+
+.replayStatusBlock {
+  padding: 12px;
+  border: 3px solid var(--ink);
+  background: var(--paper);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+
+.replayRangeWrap label {
+  color: var(--ink);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.replaySlider {
+  height: 16px;
+  border: 3px solid var(--ink);
+  border-radius: 0;
+  background: var(--paper);
+  box-shadow: none;
+}
+
+.replaySlider::-webkit-slider-thumb {
+  width: 24px;
+  height: 28px;
+  border: 3px solid var(--ink);
+  border-radius: 0;
+  background: var(--ink);
+  box-shadow: none;
+}
+
+.replaySlider::-moz-range-thumb {
+  width: 24px;
+  height: 28px;
+  border: 3px solid var(--ink);
+  border-radius: 0;
+  background: var(--ink);
+  box-shadow: none;
+}
+
+.replayScale {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+/* Network panel */
+.networkReplayPanel {
+  padding: 26px;
+  border: 5px solid var(--ink);
+  border-radius: 0;
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 9px 9px 0 var(--graphite);
+}
+
+.networkPanelHeader {
+  padding-bottom: 18px;
+  border-bottom: 3px solid var(--paper);
+}
+
+.networkPanelHeader h3 {
+  color: var(--paper);
+  font-size: clamp(1.6rem, 3vw, 2.8rem);
+  text-transform: uppercase;
+}
+
+.networkPanelHeader p,
+.networkPanelStatus {
+  color: var(--paper);
+}
+
+.networkFrame {
+  margin-top: 20px;
+  border: 3px solid var(--paper);
+  border-radius: 0;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.14) 1px, transparent 1px) 0 0 / 11px 11px,
+    var(--ink);
+  box-shadow: none;
+}
+
+.networkEdge {
+  stroke: var(--graphite);
+}
+
+.networkEdgeWeak {
+  stroke: var(--silver);
+  stroke-dasharray: 3 7;
+}
+
+.networkEdgeActive {
+  stroke: var(--paper);
+  stroke-width: 3.4;
+  filter: none;
+}
+
+.networkNode {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+.networkPositive {
+  fill: var(--paper);
+  background: var(--paper);
+}
+
+.networkNeutral {
+  fill: var(--silver);
+  background: var(--silver);
+}
+
+.networkNegative {
+  fill: var(--graphite);
+  background: var(--graphite);
+  stroke: var(--paper);
+}
+
+.networkLegend {
+  border: 2px solid var(--paper);
+  border-radius: 0;
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: none;
+}
+
+.activeLegendLine {
+  background: var(--paper);
+}
+
+/* Conversation ledger: editorial transcript panels */
+.conversationSection {
+  padding: 34px;
+}
+
+.conversationSectionHeader {
+  align-items: end;
+  padding-bottom: 20px;
+  border-bottom: 7px solid var(--ink);
+}
+
+.conversationSectionHeader h2 {
+  font-size: clamp(2.1rem, 4vw, 4.2rem);
+  line-height: 0.94;
+  text-transform: uppercase;
+}
+
+.conversationSectionHeader p {
+  color: #3b3b3b;
+}
+
+.conversationCount {
+  padding: 10px;
+  border: 3px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 4px 4px 0 var(--graphite);
+}
+
+.conversationList {
+  gap: 28px;
+  margin-top: 26px;
+}
+
+.conversationCard {
+  gap: 0;
+  overflow: visible;
+  border: 4px solid var(--ink);
+  border-radius: 0;
+  background: var(--paper);
+  box-shadow: 7px 7px 0 var(--ink);
+}
+
+.conversationCard:nth-child(even) {
+  margin-left: 2.5%;
+  background:
+    radial-gradient(circle, rgba(0, 0, 0, 0.14) 1px, transparent 1px) 0 0 / 10px 10px,
+    var(--paper);
+}
+
+.conversationMeta {
+  padding: 22px;
+  border-right: 4px solid var(--ink);
+  background: var(--mist);
+}
+
+.conversationMetaTopline,
+.conversationSignalRow {
+  border-color: var(--ink);
+}
+
+.conversationAgents {
+  gap: 7px;
+}
+
+.agentProfileTrigger {
+  min-height: 38px;
+  padding: 4px 8px;
+  border: 2px solid var(--ink);
+  border-radius: 0;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  font-weight: 800;
+  transition: transform var(--motion-fast) linear, box-shadow var(--motion-fast) linear,
+    background var(--motion-fast) linear, color var(--motion-fast) linear;
+}
+
+.agentProfileTrigger:hover,
+.agentProfileTrigger:focus-visible,
+.agentProfileTrigger[aria-expanded="true"] {
+  transform: translate(-1px, -1px);
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 4px 4px 0 var(--graphite);
+}
+
+.agentProfilePanel {
+  border: 4px solid var(--ink);
+  border-radius: 0;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 8px 8px 0 var(--ink);
+}
+
+.agentProfilePanelHeader,
+.agentTraitHeader {
+  border-color: var(--ink);
+  border-bottom: 3px solid var(--ink);
+}
+
+.agentProfileClose {
+  border: 2px solid var(--ink);
+  border-radius: 0;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+.agentProfileClose:hover,
+.agentProfileClose:focus-visible {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.agentIdentityGrid > div,
+.agentTrait {
+  border: 2px solid var(--ink);
+  border-radius: 0;
+  background: var(--paper);
+  box-shadow: none;
+}
+
+.agentTrait i {
+  border: 2px solid var(--ink);
+  border-radius: 0;
+  background: var(--paper);
+}
+
+.agentTrait i b {
+  background: var(--ink);
+}
+
+.conversationTopics {
+  gap: 6px;
+}
+
+.conversationTopics span,
+.conversationSource,
+.conversationSourceLive {
+  border: 2px solid var(--ink);
+  border-radius: 0;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: none;
+  font-weight: 800;
+}
+
+.conversationSourceLive {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.chatThread {
+  gap: 16px;
+  padding: 22px;
+  background: var(--paper);
+}
+
+.chatMessage {
+  position: relative;
+  max-width: 88%;
+  padding: 14px 16px;
+  border: 3px solid var(--ink);
+  border-radius: 0;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+
+.chatMessage::after {
+  content: "";
+  position: absolute;
+  bottom: -10px;
+  width: 14px;
+  height: 14px;
+  border-right: 3px solid var(--ink);
+  border-bottom: 3px solid var(--ink);
+  background: inherit;
+}
+
+.chatMessageA {
+  align-self: flex-start;
+}
+
+.chatMessageA::after {
+  left: 18px;
+  transform: skew(25deg) rotate(45deg);
+}
+
+.chatMessageB {
+  align-self: flex-end;
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 4px 4px 0 var(--graphite);
+}
+
+.chatMessageB::after {
+  right: 18px;
+  border-color: var(--ink);
+  transform: skew(-25deg) rotate(45deg);
+}
+
+.chatSpeaker {
+  color: currentColor;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.chatMessage p {
+  color: currentColor;
+  font-weight: 500;
+}
+
+.emptyLog,
+.emptyResult p {
+  color: #3e3e3e;
+}
+
+.emptyResult {
+  max-width: 760px;
+  margin-top: 74px;
+  border: 5px solid var(--ink);
+  background:
+    repeating-linear-gradient(45deg, transparent, transparent 12px, rgba(0, 0, 0, 0.08) 12px, rgba(0, 0, 0, 0.08) 14px),
+    var(--paper);
+}
+
+.emptyResult h1 {
+  font-size: clamp(2.4rem, 5vw, 4.6rem);
+  text-transform: uppercase;
+}
+
+.chartFrame {
+  border: 4px solid var(--ink);
+  border-radius: 0;
+  background: var(--ink);
+}
+
+/* Responsive comic grid */
+@media (max-width: 1080px) {
+  .analyticsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .analyticsCard,
+  .analyticsCard:nth-child(1),
+  .analyticsCard:nth-child(2),
+  .analyticsCard:nth-child(5),
+  .analyticsCard:nth-child(6) {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .pageShell {
+    width: min(100% - 20px, 1240px);
+    padding-top: 34px;
+  }
+
+  .resultNav,
+  .resultSection,
+  .analyticsCard,
+  .conversationCard,
+  .networkReplayPanel {
+    box-shadow: 5px 5px 0 var(--ink);
+  }
+
+  .resultNav,
+  .executiveHeader,
+  .analyticsSectionHeader,
+  .conversationSectionHeader,
+  .networkPanelHeader {
+    align-items: flex-start;
+  }
+
+  .resultNav {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .resultNav > *,
+  .resultRunMeta {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .executiveModule,
+  .conversationSection,
+  .resultSection {
+    padding: 24px;
+  }
+
+  .executiveHeader h1 {
+    font-size: clamp(2.7rem, 13vw, 4.5rem);
+  }
+
+  .analyticsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .analyticsCard {
+    min-height: 360px;
+  }
+
+  .conversationCard:nth-child(even) {
+    margin-left: 0;
+  }
+
+  .conversationMeta {
+    border-right: 0;
+    border-bottom: 4px solid var(--ink);
+  }
+}
+
+@media (max-width: 480px) {
+  .resultSection,
+  .executiveModule,
+  .replaySection,
+  .conversationSection,
+  .networkReplayPanel {
+    padding: 20px;
+  }
+
+  .summaryMetric {
+    min-height: 108px;
+  }
+
+  .analyticsCardHeader {
+    padding-inline: 16px;
+  }
+
+  .resultRunMeta span:not(.runMetaLight) {
+    padding-inline: 8px;
+  }
+
+  .chatMessage {
+    max-width: 96%;
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .analyticsCard,
+  .agentProfileTrigger,
+  .chatMessage,
+  .networkEdgeActive {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+}
 }

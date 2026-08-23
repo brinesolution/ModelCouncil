@@ -23,6 +23,8 @@ export interface SimulationNetworkEdge {
   target: number;
   similarity: number;
   weak_tie: boolean;
+  social_layers: string[];
+  primary_layer: string;
 }
 
 export interface SimulationConversationMessage {
@@ -30,11 +32,51 @@ export interface SimulationConversationMessage {
   text: string;
 }
 
+export interface SimulationAgentTraits {
+  sociability: number;
+  price_sensitivity: number;
+  technology_adoption: number;
+  emotionality: number;
+  logicality: number;
+  stubbornness: number;
+  influence_power: number;
+  product_need: number;
+  risk_tolerance: number;
+  brand_loyalty: number;
+}
+
+export interface SimulationSocialMemberships {
+  region_id: string;
+  city_id: string;
+  city_tier: number;
+  locality_id: string;
+  household_id: string | null;
+  workplace_id: string | null;
+  education_id: string | null;
+  online_interest_ids: string[];
+}
+
+export interface SimulationAgentProfile {
+  agent_id: number;
+  age: number;
+  occupation: string;
+  income_score: number;
+  primary_language: string;
+  locale: string;
+  archetype_key: string;
+  demographic_key: string;
+  occupation_key: string;
+  memberships: SimulationSocialMemberships;
+  traits: SimulationAgentTraits;
+}
+
 export interface SimulationConversation {
   round: number;
   conversation_id: string;
   agent_a_id: number;
   agent_b_id: number;
+  agent_a_profile: SimulationAgentProfile;
+  agent_b_profile: SimulationAgentProfile;
   topics: string[];
   transcript: SimulationConversationMessage[];
   language_source: string;
@@ -98,9 +140,59 @@ export interface TopicPressurePoint {
   normalized_criticism?: number;
 }
 
+export interface OpinionDiagnostics {
+  below_zero_share: number;
+  strong_negative_share: number;
+  minimum: number;
+  median: number;
+  maximum: number;
+  strong_negative_threshold: number;
+}
+
 export interface DashboardAnalytics {
   purchase_intent_distribution: PurchaseIntentDistribution;
+  opinion_diagnostics: OpinionDiagnostics;
   topic_pressure: TopicPressurePoint[];
+}
+
+export interface SimulationNetworkMetrics {
+  node_count: number;
+  edge_count: number;
+  mean_degree: number;
+  median_degree: number;
+  degree_std: number;
+  degree_p10: number;
+  degree_p90: number;
+  degree_p99: number;
+  max_degree: number;
+  degree_gini: number;
+  target_degree_mean: number;
+  target_degree_std: number;
+  connected_components: number;
+  largest_component_share: number;
+  clustering_coefficient: number;
+  weak_tie_share: number;
+  structured_weak_tie_share: number;
+  cross_community_edge_share: number;
+  similarity_mean: number;
+  similarity_std: number;
+  similarity_p10: number;
+  similarity_p90: number;
+  relationship_mean: number;
+  relationship_std: number;
+  directional_trust_mean: number;
+  directional_trust_std: number;
+  household_edge_share: number;
+  workplace_edge_share: number;
+  local_edge_share: number;
+  education_edge_share: number;
+  online_edge_share: number;
+  affinity_edge_share: number;
+  multi_layer_edge_share: number;
+  household_membership_share: number;
+  workplace_membership_share: number;
+  education_membership_share: number;
+  online_membership_share: number;
 }
 
 export interface SimulationRunResponse {
@@ -127,6 +219,7 @@ export interface SimulationRunResponse {
   network: {
     nodes: SimulationNetworkNode[];
     edges: SimulationNetworkEdge[];
+    metrics: SimulationNetworkMetrics;
   };
   selected_conversations: SimulationConversation[];
   dialogue_stats: DialogueRenderStats;

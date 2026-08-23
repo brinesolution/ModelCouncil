@@ -1,8 +1,15 @@
+from pathlib import Path
+
 import networkx as nx
 
 from simulation.conversation.scheduler import _edge_score_components, schedule_conversations
+from simulation.network.knn_graph import build_knn_graph
+from simulation.population.excel_repository import ExcelTraitRepository
 from simulation.opinion.dynamics_config import InfluenceDynamicsConfig
 from simulation.population.generator import generate_population
+
+
+TRAIT_ROOT = Path("data/traits")
 
 
 def _mixed_graph(agents):
@@ -77,3 +84,30 @@ def test_weak_tie_exploration_prevents_weak_edges_from_collapsing_out_of_selecti
 
     assert total_selected > 300
     assert selected_share / graph_share >= 0.70
+
+
+def test_default_scheduler_keeps_structured_weak_ties_visible_without_dominating():
+    agents = generate_population(450, seed=303, traits=ExcelTraitRepository(TRAIT_ROOT))
+    graph = build_knn_graph(agents, k=14, weak_tie_rate=0.05, seed=303)
+    dynamics = InfluenceDynamicsConfig()
+    weak_selected = 0
+    total_selected = 0
+
+    for round_index in range(1, 61):
+        pairs = schedule_conversations(
+            agents,
+            graph,
+            round_index=round_index,
+            max_conversations_per_agent=2,
+            cooldown_rounds=0,
+            seed=303,
+            initiator_rate=0.20,
+            dynamics=dynamics,
+        )
+        for pair in pairs:
+            total_selected += 1
+            weak_selected += int(bool(graph.edges[pair.agent_a_id, pair.agent_b_id].get("weak_tie")))
+
+    selected_share = weak_selected / total_selected
+    assert total_selected > 2500
+    assert 0.08 <= selected_share <= 0.24

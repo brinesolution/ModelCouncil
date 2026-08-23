@@ -134,6 +134,36 @@ class TechnologyContext:
 
 
 @dataclass(slots=True)
+class SocialMembershipContext:
+    region_id: str = "unspecified"
+    city_id: str = "unspecified"
+    city_tier: int = 3
+    locality_id: str = "unspecified"
+    household_id: str | None = None
+    workplace_id: str | None = None
+    education_id: str | None = None
+    online_interest_ids: tuple[str, ...] = ()
+
+    def normalized(self) -> "SocialMembershipContext":
+        return SocialMembershipContext(
+            region_id=str(self.region_id or "unspecified"),
+            city_id=str(self.city_id or "unspecified"),
+            city_tier=max(1, min(3, int(self.city_tier))),
+            locality_id=str(self.locality_id or "unspecified"),
+            household_id=(str(self.household_id) if self.household_id else None),
+            workplace_id=(str(self.workplace_id) if self.workplace_id else None),
+            education_id=(str(self.education_id) if self.education_id else None),
+            online_interest_ids=tuple(
+                dict.fromkeys(
+                    str(value)
+                    for value in self.online_interest_ids
+                    if str(value).strip()
+                )
+            ),
+        )
+
+
+@dataclass(slots=True)
 class SocialContext:
     peer_influence: float = 0.5
     family_influence: float = 0.5
@@ -163,6 +193,7 @@ class ConsumerContext:
     behaviour: BehaviourContext = field(default_factory=BehaviourContext)
     technology: TechnologyContext = field(default_factory=TechnologyContext)
     social: SocialContext = field(default_factory=SocialContext)
+    memberships: SocialMembershipContext = field(default_factory=SocialMembershipContext)
     archetype_key: str = "unspecified"
 
     def normalized(self) -> "ConsumerContext":
@@ -175,5 +206,6 @@ class ConsumerContext:
             behaviour=self.behaviour.normalized(),
             technology=self.technology.normalized(),
             social=self.social.normalized(),
+            memberships=self.memberships.normalized(),
             archetype_key=self.archetype_key,
         )

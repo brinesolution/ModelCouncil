@@ -26,7 +26,7 @@ export function AnalyticsGrid({ result }: AnalyticsGridProps) {
         <span className="analyticsRunId mono">SEED {result.seed} / R{result.rounds}</span>
       </header>
       <div className="analyticsGrid">
-        <SentimentDonut finalPoint={finalPoint} />
+        <SentimentDonut finalPoint={finalPoint} diagnostics={result.analytics.opinion_diagnostics} />
         <PurchaseBars distribution={result.analytics.purchase_intent_distribution} />
         <TrendLines timeline={result.timeline} />
         <ConversationVolume timeline={result.timeline} />

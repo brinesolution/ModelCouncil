@@ -45,14 +45,22 @@ export default function SimulationResultPage() {
     );
   }
 
-  if (!result.analytics) {
+  const resultSchemaCurrent = Boolean(
+    result.analytics?.opinion_diagnostics
+      && Array.isArray(result.selected_conversations)
+      && result.selected_conversations.every(
+        (conversation) => conversation.agent_a_profile && conversation.agent_b_profile,
+      ),
+  );
+
+  if (!result.analytics || !resultSchemaCurrent) {
     return (
       <main className="pageShell">
         <section className="resultSection emptyResult">
           <span className="techLabel">Stored result schema outdated</span>
           <h1>Run the simulation again for the new analytics dashboard</h1>
           <p>
-            This browser tab contains a result created before the six-chart analytics payload was added. Re-running the same seeded configuration will generate the new response shape.
+            This browser tab contains an older result without the current opinion diagnostics or agent-profile payload. Re-running the same seeded configuration will generate the new response shape.
           </p>
           <Link className="button linkButton" href="/simulate">Run updated simulation</Link>
         </section>

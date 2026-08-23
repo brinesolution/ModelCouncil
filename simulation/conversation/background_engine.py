@@ -11,10 +11,12 @@ from simulation.conversation.dialogue_realism import (
     derive_dialogue_shape,
     derive_speaking_style,
 )
+from simulation.conversation.discussion_policy import choose_discussion_turn_count
 from simulation.conversation.ledger import ConversationLanguageContext
 from simulation.conversation.models import ConversationPair, ConversationResult, SemanticMessage
 from simulation.conversation.topic_policy import select_conversation_topic
 from simulation.domain.agent import ConsumerAgent, clamp01, clamp_opinion
+from simulation.network.social_topology import edge_trust
 from simulation.product.pricing import ConsumerPriceContext
 from simulation.audit.logger import RunAuditSink
 
@@ -60,33 +62,38 @@ def generate_background_conversation(
             agent_ids=[pair.agent_a_id, pair.agent_b_id],
         )
 
-    first_message = _semantic_message(
-        first,
-        second,
-        edge,
-        rng,
-        recent_topics=_merge_recent_topics(
-            agent_history.get(first.agent_id, ()),
-            edge_history.get(edge_key, ()),
-        ),
-        audit=audit,
-        pair=pair,
-    )
-    second_message = _semantic_message(
-        second,
-        first,
-        edge,
-        rng,
-        recent_topics=_merge_recent_topics(
-            agent_history.get(second.agent_id, ()),
-            edge_history.get(edge_key, ()),
-        ),
-        audit=audit,
-        pair=pair,
-    )
+    turn_count = choose_discussion_turn_count(first, second, edge, rng)
+    semantic_messages: list[SemanticMessage] = []
+    local_topics: list[str] = []
+    for turn_index in range(turn_count):
+        speaker, listener = (first, second) if turn_index % 2 == 0 else (second, first)
+        previous_topic = None
+        previous_stance = None
+        if semantic_messages:
+            previous_topic, previous_stance = next(
+                iter(semantic_messages[-1].topic_effects.items())
+            )
+        message = _semantic_message(
+            speaker,
+            listener,
+            edge,
+            rng,
+            recent_topics=_merge_recent_topics(
+                agent_history.get(speaker.agent_id, ()),
+                edge_history.get(edge_key, ()),
+                tuple(local_topics[-4:]),
+            ),
+            reply_to_topic=previous_topic,
+            reply_to_stance=previous_stance,
+            audit=audit,
+            pair=pair,
+        )
+        semantic_messages.append(message)
+        local_topics.extend(message.topic_effects)
+
     semantic_result = ConversationResult(
         conversation_id=pair.conversation_id,
-        messages=[first_message, second_message],
+        messages=semantic_messages,
         transcript=[],
         language_source="background",
     )
@@ -114,18 +121,31 @@ def generate_background_conversation(
 
     rendered_messages: list[SemanticMessage] = []
     transcript: list[dict[str, str | int]] = []
-    for message in semantic_result.messages:
+    last_turn_by_speaker = {
+        message.speaker_id: index
+        for index, message in enumerate(semantic_result.messages)
+    }
+    for turn_index, message in enumerate(semantic_result.messages):
         topic, stance = next(iter(message.topic_effects.items()))
+        previous_topic = None
+        previous_stance = None
+        if turn_index > 0:
+            previous_topic, previous_stance = next(
+                iter(semantic_result.messages[turn_index - 1].topic_effects.items())
+            )
         speaking_style = derive_speaking_style(profiles[message.speaker_id])
         text = render_background_text(
             speaker=snapshot[message.speaker_id],
             listener=listeners[message.speaker_id],
             topic=topic,
             stance=stance,
-            conversation_id=pair.conversation_id,
+            conversation_id=f"{pair.conversation_id}:t{turn_index}",
             dialogue_shape=dialogue_shape,
             speaking_style=speaking_style,
             price_context=dialogue_price_contexts.get(message.speaker_id),
+            decision_emphasis=last_turn_by_speaker[message.speaker_id] == turn_index,
+            reply_to_topic=previous_topic,
+            reply_to_stance=previous_stance,
         )
         rendered = replace(message, text=text)
         rendered_messages.append(rendered)
@@ -161,6 +181,7 @@ def generate_background_conversation(
             "conversation.semantic_completed",
             {
                 "message_count": len(result.messages),
+                "discussion_turn_count": len(result.messages),
                 "transcript": result.transcript,
                 "language_source": result.language_source,
                 "dialogue_shape": dialogue_shape,
@@ -179,6 +200,8 @@ def _semantic_message(
     rng: np.random.Generator,
     *,
     recent_topics: tuple[str, ...],
+    reply_to_topic: str | None,
+    reply_to_stance: float | None,
     audit: RunAuditSink | None,
     pair: ConversationPair,
 ) -> SemanticMessage:
@@ -187,12 +210,14 @@ def _semantic_message(
         listener,
         rng,
         recent_topics=recent_topics,
+        reply_to_topic=reply_to_topic,
+        reply_to_stance=reply_to_stance,
         audit=audit,
         round_index=pair.round_index,
         conversation_id=pair.conversation_id,
     )
 
-    trust = float(edge.get("trust", 0.4))
+    trust = edge_trust(edge, listener.agent_id)
     relationship = float(edge.get("relationship_strength", 0.4))
     argument_noise = float(rng.normal(0.0, 0.04))
     argument_components = {

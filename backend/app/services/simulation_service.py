@@ -1,16 +1,21 @@
 from __future__ import annotations
 
 import asyncio
+from dataclasses import asdict
 from pathlib import Path
 
 from backend.app.core.config import get_settings, resolve_deepseek_api_key
 from backend.app.schemas.simulation import (
+    AgentProfileView,
+    AgentTraitsView,
     ConversationView,
     DashboardAnalyticsView,
     DialogueStatsView,
     NetworkEdgeView,
+    NetworkMetricsView,
     NetworkNodeView,
     NetworkView,
+    OpinionDiagnosticsView,
     PurchaseIntentDistributionView,
     ReplayAgentStateView,
     ReplayCheckpointView,
@@ -20,6 +25,7 @@ from backend.app.schemas.simulation import (
     SimulationPresetView,
     SimulationRunResponse,
     SimulationSummaryView,
+    SocialMembershipView,
     TimelinePointView,
     TopicPressurePointView,
 )
@@ -177,8 +183,8 @@ def build_run_response(
             )
             for point in result.timeline
         ],
-        network=_network_view(result.population, result.graph),
-        selected_conversations=_conversation_views(result.conversations),
+        network=_network_view(result.population, result.graph, result.network_metrics),
+        selected_conversations=_conversation_views(result.conversations, result.population),
         dialogue_stats=_dialogue_stats_view(dialogue_stats),
         analytics=_dashboard_analytics_view(result),
         replay=_replay_views(result, preset.simulated_minutes_per_round),
@@ -256,7 +262,7 @@ def _trait_repository() -> tuple[ExcelTraitRepository | None, str]:
     return ExcelTraitRepository(TRAIT_ROOT), "excel"
 
 
-def _network_view(population, graph, limit: int = 80) -> NetworkView:
+def _network_view(population, graph, metrics, limit: int = 80) -> NetworkView:
     sampled = population[:limit]
     sampled_ids = {agent.agent_id for agent in sampled}
     nodes = [
@@ -275,17 +281,57 @@ def _network_view(population, graph, limit: int = 80) -> NetworkView:
             target=int(target),
             similarity=float(data.get("similarity", 0.0)),
             weak_tie=bool(data.get("weak_tie", False)),
+            social_layers=list(data.get("social_layers", ())),
+            primary_layer=str(data.get("primary_layer", "social_affinity")),
         )
         for source, target, data in graph.edges(data=True)
         if source in sampled_ids and target in sampled_ids
     ][:240]
-    return NetworkView(nodes=nodes, edges=edges)
+    if metrics is None:
+        raise ValueError("simulation result is missing network distribution metrics")
+    return NetworkView(
+        nodes=nodes,
+        edges=edges,
+        metrics=NetworkMetricsView(**asdict(metrics)),
+    )
 
 
-def _conversation_views(entries, limit: int = 12) -> list[ConversationView]:
+def _agent_profile_view(agent) -> AgentProfileView:
+    return AgentProfileView(
+        agent_id=agent.agent_id,
+        age=agent.age,
+        occupation=agent.occupation,
+        income_score=agent.income_score,
+        primary_language=agent.primary_language,
+        locale=agent.locale,
+        archetype_key=agent.context.archetype_key,
+        demographic_key=agent.context.demographic.key,
+        occupation_key=agent.context.occupation.key,
+        memberships=SocialMembershipView(
+            region_id=agent.context.memberships.region_id,
+            city_id=agent.context.memberships.city_id,
+            city_tier=agent.context.memberships.city_tier,
+            locality_id=agent.context.memberships.locality_id,
+            household_id=agent.context.memberships.household_id,
+            workplace_id=agent.context.memberships.workplace_id,
+            education_id=agent.context.memberships.education_id,
+            online_interest_ids=list(agent.context.memberships.online_interest_ids),
+        ),
+        traits=AgentTraitsView(**agent.traits.as_dict()),
+    )
+
+
+def _conversation_views(entries, population=(), limit: int = 12) -> list[ConversationView]:
     selected = select_replay_conversations(entries, limit=limit)
+    agents_by_id = {agent.agent_id: agent for agent in population}
     views: list[ConversationView] = []
     for entry in selected:
+        agent_a = agents_by_id.get(entry.agent_a_id)
+        agent_b = agents_by_id.get(entry.agent_b_id)
+        if agent_a is None or agent_b is None:
+            raise ValueError(
+                f"Conversation {entry.conversation_id} references an agent missing from the run population."
+            )
         topics = sorted(
             {
                 topic
@@ -299,6 +345,8 @@ def _conversation_views(entries, limit: int = 12) -> list[ConversationView]:
                 conversation_id=entry.conversation_id,
                 agent_a_id=entry.agent_a_id,
                 agent_b_id=entry.agent_b_id,
+                agent_a_profile=_agent_profile_view(agent_a),
+                agent_b_profile=_agent_profile_view(agent_b),
                 topics=topics,
                 transcript=entry.result.transcript,
                 language_source=entry.result.language_source,
@@ -333,11 +381,20 @@ def _dialogue_stats_view(stats: DialogueRenderStats) -> DialogueStatsView:
 def _dashboard_analytics_view(result: SimulationResult) -> DashboardAnalyticsView:
     analytics = build_dashboard_analytics(result)
     distribution = analytics.purchase_intent_distribution
+    diagnostics = analytics.opinion_diagnostics
     return DashboardAnalyticsView(
         purchase_intent_distribution=PurchaseIntentDistributionView(
             low=distribution.low,
             medium=distribution.medium,
             high=distribution.high,
+        ),
+        opinion_diagnostics=OpinionDiagnosticsView(
+            below_zero_share=diagnostics.below_zero_share,
+            strong_negative_share=diagnostics.strong_negative_share,
+            minimum=diagnostics.minimum,
+            median=diagnostics.median,
+            maximum=diagnostics.maximum,
+            strong_negative_threshold=diagnostics.strong_negative_threshold,
         ),
         topic_pressure=[
             TopicPressurePointView(

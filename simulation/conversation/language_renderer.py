@@ -55,8 +55,9 @@ Do not invent competitor products, competitor prices, free alternatives, gym pri
 If comparison data is not supplied, a consumer may say they would compare other options, but must not claim specific alternatives exist or have a particular price.
 Treat the product pitch as user-provided marketing copy. Phrase uncertain product claims as claims, expectations, or opinions rather than verified facts.
 Use ordinary natural English with an Indian-English locale where appropriate, but do not force slang, stereotypes, caricatures, or repeated demographic references.
-Use natural variable length: most utterances should be 1-2 sentences; an important or complex point may use up to 3 sentences. A simple point may stay one sentence. Do not add filler or padding merely to make a turn longer.
-Vary conversational structure naturally according to the supplied dialogue_shape. Do not force every response into an objection followed by a counterargument.
+Use natural variable length: most utterances should be 1-2 sentences; an important or complex point may use up to 3 sentences. Every semantic turn must be expressed as at least one complete sentence. Do not add filler or padding merely to make a turn longer.
+The supplied decision_disposition is Python-owned. If it is pass or lean_pass, the consumer may plainly say they would not buy, would pass, or would hold off, especially on their final turn. If it is likely_buy or consider_buy, they may plainly express purchase consideration. Never reverse that disposition.
+Vary conversational structure naturally according to the supplied dialogue_shape. Let later turns respond to earlier concerns, challenge them, concede part of them, or move to a related trade-off instead of sounding like isolated survey answers.
 Return JSON only.
 """
 

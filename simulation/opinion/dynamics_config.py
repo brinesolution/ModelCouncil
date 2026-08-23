@@ -5,13 +5,13 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True, slots=True)
 class InfluenceDynamicsConfig:
-    version: str = "2j-c-1"
+    version: str = "kmap-v2-1"
     max_topic_delta: float = 0.20
     saturation_beta: float = 0.95
     base_noise_std: float = 0.012
     noise_floor: float = 0.001
     max_noise_to_signal_ratio: float = 0.35
-    weak_tie_exploration_weight: float = 0.45
+    weak_tie_exploration_weight: float = 0.22
     disagreement_information_weight: float = 0.08
 
     def __post_init__(self) -> None:

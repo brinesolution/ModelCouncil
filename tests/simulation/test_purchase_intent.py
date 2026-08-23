@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-from simulation.behaviour.purchase import derive_purchase_intent
+from simulation.behaviour.purchase import derive_overall_opinion, derive_purchase_intent
 from simulation.domain.agent import ProductBeliefs
 from simulation.domain.consumer_context import DecisionContext, EmotionContext, TechnologyContext
 from simulation.population.generator import generate_population
@@ -60,6 +60,30 @@ def test_negative_trust_penalizes_risk_averse_consumer_more_than_risk_tolerant()
     tolerant_value = derive_purchase_intent(tolerant, fit=_fit(risk_fit=0.8))
 
     assert tolerant_value > averse_value + 0.08
+
+
+def test_single_severe_objection_can_veto_an_otherwise_positive_average_for_relevant_consumer():
+    price_tolerant = _agent()
+    price_sensitive = deepcopy(price_tolerant)
+    beliefs = ProductBeliefs(
+        price=-0.95,
+        usefulness=0.40,
+        quality=0.40,
+        trust=0.40,
+        novelty=0.40,
+        privacy=0.40,
+    )
+    price_tolerant.state.beliefs = deepcopy(beliefs)
+    price_sensitive.state.beliefs = deepcopy(beliefs)
+    price_tolerant.traits.price_sensitivity = 0.10
+    price_sensitive.traits.price_sensitivity = 0.95
+
+    tolerant_opinion = derive_overall_opinion(price_tolerant)
+    sensitive_opinion = derive_overall_opinion(price_sensitive)
+
+    assert tolerant_opinion > 0.0
+    assert sensitive_opinion < 0.0
+    assert tolerant_opinion > sensitive_opinion + 0.15
 
 
 def test_negative_price_belief_and_pressure_lower_purchase_intent():

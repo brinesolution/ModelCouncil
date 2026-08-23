@@ -180,11 +180,54 @@ class NetworkEdgeView(BaseModel):
     target: int
     similarity: float
     weak_tie: bool
+    social_layers: list[str]
+    primary_layer: str
+
+
+class NetworkMetricsView(BaseModel):
+    node_count: int
+    edge_count: int
+    mean_degree: float
+    median_degree: float
+    degree_std: float
+    degree_p10: float
+    degree_p90: float
+    degree_p99: float
+    max_degree: int
+    degree_gini: float
+    target_degree_mean: float
+    target_degree_std: float
+    connected_components: int
+    largest_component_share: float
+    clustering_coefficient: float
+    weak_tie_share: float
+    structured_weak_tie_share: float
+    cross_community_edge_share: float
+    similarity_mean: float
+    similarity_std: float
+    similarity_p10: float
+    similarity_p90: float
+    relationship_mean: float
+    relationship_std: float
+    directional_trust_mean: float
+    directional_trust_std: float
+    household_edge_share: float
+    workplace_edge_share: float
+    local_edge_share: float
+    education_edge_share: float
+    online_edge_share: float
+    affinity_edge_share: float
+    multi_layer_edge_share: float
+    household_membership_share: float
+    workplace_membership_share: float
+    education_membership_share: float
+    online_membership_share: float
 
 
 class NetworkView(BaseModel):
     nodes: list[NetworkNodeView]
     edges: list[NetworkEdgeView]
+    metrics: NetworkMetricsView
 
 
 class ConversationTranscriptMessageView(BaseModel):
@@ -192,11 +235,51 @@ class ConversationTranscriptMessageView(BaseModel):
     text: str
 
 
+class AgentTraitsView(BaseModel):
+    sociability: float
+    price_sensitivity: float
+    technology_adoption: float
+    emotionality: float
+    logicality: float
+    stubbornness: float
+    influence_power: float
+    product_need: float
+    risk_tolerance: float
+    brand_loyalty: float
+
+
+class SocialMembershipView(BaseModel):
+    region_id: str
+    city_id: str
+    city_tier: int
+    locality_id: str
+    household_id: str | None = None
+    workplace_id: str | None = None
+    education_id: str | None = None
+    online_interest_ids: list[str]
+
+
+class AgentProfileView(BaseModel):
+    agent_id: int
+    age: int
+    occupation: str
+    income_score: float
+    primary_language: str
+    locale: str
+    archetype_key: str
+    demographic_key: str
+    occupation_key: str
+    memberships: SocialMembershipView
+    traits: AgentTraitsView
+
+
 class ConversationView(BaseModel):
     round: int
     conversation_id: str
     agent_a_id: int
     agent_b_id: int
+    agent_a_profile: AgentProfileView
+    agent_b_profile: AgentProfileView
     topics: list[str]
     transcript: list[ConversationTranscriptMessageView]
     language_source: str
@@ -260,8 +343,18 @@ class TopicPressurePointView(BaseModel):
     normalized_criticism: float
 
 
+class OpinionDiagnosticsView(BaseModel):
+    below_zero_share: float
+    strong_negative_share: float
+    minimum: float
+    median: float
+    maximum: float
+    strong_negative_threshold: float
+
+
 class DashboardAnalyticsView(BaseModel):
     purchase_intent_distribution: PurchaseIntentDistributionView
+    opinion_diagnostics: OpinionDiagnosticsView
     topic_pressure: list[TopicPressurePointView]
 
 

@@ -491,6 +491,32 @@ def test_run_simulation_returns_timeline_and_synthetic_label() -> None:
     assert body["summary"]["population_size"] == 250
     assert body["summary"]["conversation_count"] >= 0
     assert len(body["network"]["nodes"]) <= 80
+    metrics = body["network"]["metrics"]
+    assert metrics["node_count"] == 250
+    assert metrics["edge_count"] >= 250
+    assert metrics["degree_p90"] >= metrics["degree_p10"]
+    assert 0.0 <= metrics["weak_tie_share"] <= 1.0
+    assert metrics["largest_component_share"] >= 0.90
+    for key in (
+        "household_edge_share",
+        "workplace_edge_share",
+        "local_edge_share",
+        "education_edge_share",
+        "online_edge_share",
+        "affinity_edge_share",
+        "multi_layer_edge_share",
+        "household_membership_share",
+        "workplace_membership_share",
+        "education_membership_share",
+        "online_membership_share",
+    ):
+        assert 0.0 <= metrics[key] <= 1.0
+    assert metrics["household_edge_share"] > 0.0
+    assert metrics["online_edge_share"] > 0.0
+    assert body["network"]["edges"]
+    network_edge = body["network"]["edges"][0]
+    assert network_edge["social_layers"]
+    assert network_edge["primary_layer"] in network_edge["social_layers"]
     assert body["selected_conversations"]
     conversation = body["selected_conversations"][0]
     assert conversation["language_source"] == "background"
@@ -498,8 +524,42 @@ def test_run_simulation_returns_timeline_and_synthetic_label() -> None:
     assert all(message["text"] for message in conversation["transcript"])
     assert 0.0 <= conversation["importance"] <= 1.0
     assert conversation["llm_selected"] is False
+    for side in ("agent_a_profile", "agent_b_profile"):
+        profile = conversation[side]
+        expected_id = conversation["agent_a_id"] if side == "agent_a_profile" else conversation["agent_b_id"]
+        assert profile["agent_id"] == expected_id
+        assert profile["age"] >= 18
+        assert profile["occupation"]
+        assert 0.0 <= profile["income_score"] <= 1.0
+        assert profile["archetype_key"]
+        assert profile["demographic_key"]
+        memberships = profile["memberships"]
+        assert memberships["region_id"] != "unspecified"
+        assert memberships["city_id"] != "unspecified"
+        assert memberships["city_tier"] in {1, 2, 3}
+        assert memberships["locality_id"] != "unspecified"
+        assert memberships["household_id"]
+        assert memberships["online_interest_ids"]
+        assert set(profile["traits"]) == {
+            "sociability",
+            "price_sensitivity",
+            "technology_adoption",
+            "emotionality",
+            "logicality",
+            "stubbornness",
+            "influence_power",
+            "product_need",
+            "risk_tolerance",
+            "brand_loyalty",
+        }
+        assert all(0.0 <= value <= 1.0 for value in profile["traits"].values())
 
     analytics = body["analytics"]
+    diagnostics = analytics["opinion_diagnostics"]
+    assert 0.0 <= diagnostics["below_zero_share"] <= 1.0
+    assert 0.0 <= diagnostics["strong_negative_share"] <= diagnostics["below_zero_share"]
+    assert diagnostics["minimum"] <= diagnostics["median"] <= diagnostics["maximum"]
+    assert diagnostics["strong_negative_threshold"] == -0.20
     purchase = analytics["purchase_intent_distribution"]
     assert purchase["low"] + purchase["medium"] + purchase["high"] == body["summary"]["population_size"]
     assert [point["topic"] for point in analytics["topic_pressure"]] == [

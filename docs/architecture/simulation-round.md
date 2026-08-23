@@ -47,9 +47,11 @@ After all numerical rounds complete:
 24. Serialize replay, dialogue statistics, and selected conversation views
 ```
 
-## Candidate network versus active interaction
+## Persistent layered network versus active interaction
 
-`K` describes candidate neighbours. It never implies `K` conversations per round.
+Before round 1, the population already has persistent synthetic household, workplace, locality, education, and online-interest memberships. The graph builder uses those explicit layers first, then uses affinity K-neighbour search to fill remaining heterogeneous target degree, followed by bounded triadic closure and structured weak bridges.
+
+`K` therefore controls affinity candidate/fill scale. It never implies exactly `K` friends and never implies `K` conversations per round.
 
 Current normal conversation capacity is two per agent per round.
 
@@ -61,13 +63,14 @@ For an initiator, candidate neighbour scores are influenced by:
 
 - similarity;
 - relationship strength;
+- social-layer interaction opportunity;
 - product salience;
 - sociability;
 - later topic relevance/activity/event context;
 - cooldown;
 - small seeded random jitter.
 
-Neighbour selection is probabilistic/weighted, not always nearest-neighbour-first.
+Neighbour selection is probabilistic/weighted, not always nearest-neighbour-first. Household/workplace/local/education/online context can therefore change contact probability even when two candidate edges have similar numerical trait similarity.
 
 ## Synchronous state rule
 
@@ -139,6 +142,10 @@ traits:          0 .. 1 unless explicitly categorical
 ```
 
 Every commit must clamp/validate legal ranges.
+
+## Relationship evolution
+
+After a selected conversation has produced its evidence, relationship strength and directional trust can evolve slowly for future rounds. Persistent V3 layers impose bounded relationship floors so a structural household/workplace tie does not become equivalent to a random weak acquaintance after a small number of disagreements. This does not force opinion agreement and does not change the frozen-state rule for the current round.
 
 ## Purchase intent
 

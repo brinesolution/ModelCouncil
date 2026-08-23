@@ -87,6 +87,19 @@ def write_markdown_summary(
     else:
         lines.append("No completed round summaries were recorded.")
 
+    lines.extend(["", "## Opinion diagnostics", ""])
+    analytics = final_data.get("analytics")
+    diagnostics = analytics.get("opinion_diagnostics") if isinstance(analytics, Mapping) else None
+    if isinstance(diagnostics, Mapping):
+        lines.append(f"- **Below-zero share:** `{_fmt(diagnostics.get('below_zero_share'))}`")
+        lines.append(f"- **Strong-negative share:** `{_fmt(diagnostics.get('strong_negative_share'))}`")
+        lines.append(f"- **Strong-negative cutoff:** `{_fmt(diagnostics.get('strong_negative_threshold'))}`")
+        lines.append(f"- **Minimum opinion:** `{_fmt(diagnostics.get('minimum'))}`")
+        lines.append(f"- **Median opinion:** `{_fmt(diagnostics.get('median'))}`")
+        lines.append(f"- **Maximum opinion:** `{_fmt(diagnostics.get('maximum'))}`")
+    else:
+        lines.append("- Continuous opinion diagnostics were not available for this result schema.")
+
     lines.extend(["", "## Rendering / fallback summary", ""])
     lines.append(f"- **Accepted live renders:** `{logger.render_summary['completed_count']}`")
     lines.append(f"- **Deterministic fallbacks:** `{logger.render_summary['fallback_count']}`")

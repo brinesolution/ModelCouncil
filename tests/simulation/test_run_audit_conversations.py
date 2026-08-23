@@ -72,10 +72,11 @@ def test_semantic_conversation_audit_contains_topic_scores_styles_and_fallback_t
     topic_choices = [event for event in audit.events if event["event"] == "conversation.topic_selected"]
     calculations = [event for event in audit.events if event["event"] == "conversation.semantic_calculation"]
     assert len(started) == 1
-    assert len(messages) == len(result.messages) == 2
+    assert 4 <= len(result.messages) <= 8
+    assert len(messages) == len(result.messages)
     assert len(completed) == 1
-    assert len(topic_choices) == 2
-    assert len(calculations) == 2
+    assert len(topic_choices) == len(result.messages)
+    assert len(calculations) == len(result.messages)
     for event, message in zip(messages, result.messages, strict=True):
         payload = event["payload"]
         assert payload["speaker_id"] == message.speaker_id

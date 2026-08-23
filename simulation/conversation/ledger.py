@@ -23,6 +23,7 @@ class AgentLanguageProfile:
     confidence: float
     knowledge: float
     overall_opinion: float
+    purchase_intent: float = 0.5
     income_score: float = 0.5
     price_sensitivity: float = 0.5
     technology_adoption: float = 0.5
@@ -52,6 +53,7 @@ class AgentLanguageProfile:
             confidence=agent.state.confidence,
             knowledge=agent.state.knowledge,
             overall_opinion=agent.state.overall_opinion,
+            purchase_intent=agent.state.purchase_intent,
         )
 
 

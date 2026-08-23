@@ -73,6 +73,8 @@ A consumer can carry:
 - decision style;
 - personality;
 - social behaviour;
+- persistent synthetic social memberships such as household, workplace, locality, education, and online-interest communities;
+- abstract synthetic region/city/city-tier structure;
 - technology adoption;
 - emotional tendencies;
 - price sensitivity;
@@ -128,23 +130,68 @@ Fit can include factors such as:
 
 This allows the same pitch to naturally create advocates, neutral consumers, skeptics, and non-buyers without forcing a fixed sentiment distribution.
 
-### Social network simulation
+### Layered social network simulation
 
-Consumers are connected through a weighted K-nearest-neighbour graph.
+ModelCouncil uses a persistent **multiplex social graph** rather than treating consumer similarity as friendship.
 
-The graph represents candidate social similarity and relationships, not guaranteed conversations.
+After individual consumers are generated, a deterministic population-wide pass assigns abstract synthetic social structure:
 
-ModelCouncil also introduces bounded weak ties so information can cross clusters rather than remaining trapped inside highly similar groups.
+- region, city, city tier, and locality IDs;
+- household/co-residence cohorts;
+- workplace cohorts for non-students;
+- education cohorts for consumers explicitly represented as students;
+- one or more online-interest communities.
+
+These IDs are synthetic structural cohorts. They are not claims that a consumer lives in a real named city, works for a real employer, or belongs to a statistically representative household.
+
+Normal graph edges can carry one or more layers:
+
+```text
+household
+workplace
+local
+education
+online
+social_affinity
+triadic_closure
+```
+
+Weak cross-community contacts use a `weak_bridge` layer. A pair can be connected for several reasons at once—for example, coworkers who also live in the same locality.
+
+Small household cohorts can be fully connected. Larger workplace, education, locality, and online groups use bounded contact budgets rather than cliques. After explicit social contacts are formed, K-neighbour candidate search fills remaining social capacity using persistent affinity; bounded triadic closure and structured weak bridges are then added.
+
+`K` is therefore a **candidate/fill scale**, not a literal friend count and not the number of conversations a consumer has per round.
+
+Edges retain relationship strength, directional trust, layer-specific interaction opportunity, interaction history, and formation provenance. Relationship/trust state can evolve slowly after conversations while structural layers remain persistent.
 
 Conversation scheduling respects:
 
 - per-agent conversation capacity;
 - initiator probability;
-- relationship information;
+- relationship strength;
+- social-layer interaction opportunity;
+- product salience;
+- sociability;
 - conversation cooldowns;
 - weak-tie exposure;
 - recent interaction history;
-- disagreement and relevance.
+- disagreement and informational value.
+
+A completed Excel-backed V3 calibration run produced the following representative standard-scale network at 1,000 agents (`k=14`):
+
+```text
+edges             8,156
+degree P10/50/90  9 / 15 / 25.1
+max degree        65
+clustering         0.167
+connected components 1
+weak-edge share   4.8%
+multi-layer share 37.4%
+```
+
+At that scale, explicit layer coverage included approximately 10% household edges, 22% workplace edges, 26% local edges, 8% education edges, and 24% online edges. These shares can overlap because one relationship may belong to several layers. They are synthetic calibration diagnostics, not empirical claims about real social networks.
+
+In six-seed 250-consumer/10-round validation, selected weak-tie conversations stayed near 10%, repeat-pair rate near 12%, and only about 2% of consumers had no scheduled conversation. Good, mixed, and deliberately bad product scenarios remained ordered while the mixed case retained a meaningful skeptical segment.
 
 ### Synchronous opinion updates
 
@@ -343,6 +390,8 @@ A bounded social-network view allows the user to inspect:
 - purchase intent;
 - active conversation edges by round.
 
+The V3 run/API contract additionally exposes each sampled edge's `social_layers` and `primary_layer`, consumer social-membership context, and network-distribution diagnostics including degree spread, connectivity, clustering, weak-tie share, relationship/trust dispersion, per-layer edge shares, multi-layer share, and membership coverage. The current browser replay consumes the same response shape but does not yet provide dedicated layer labels or layer-filter controls; those are a presentation-layer extension rather than missing simulation state.
+
 The browser intentionally renders a bounded sample rather than attempting to draw every node in a 5,000-consumer simulation.
 
 ### Conversation replay
@@ -383,9 +432,11 @@ Audit events can include:
 - product interpretation;
 - trait-workbook provenance;
 - generated consumer state;
+- assigned synthetic social memberships;
 - product-consumer fit;
 - pricing calculations;
-- graph construction;
+- layered graph construction and edge formation sources;
+- network distribution/layer diagnostics;
 - scheduled conversations;
 - semantic messages;
 - influence/evidence calculations;
@@ -441,6 +492,7 @@ ModelCouncil
 ### Architectural boundaries
 
 - `simulation/` remains independent from FastAPI and browser code.
+- Population generation owns persistent social membership assignment; graph construction consumes those memberships but does not invent product-dependent identity.
 - Backend routes stay thin and delegate orchestration to services.
 - Frontend code never owns provider secrets.
 - LLM providers do not own or directly mutate consumer state.
@@ -744,7 +796,9 @@ ModelCouncil currently models a synthetic society using designed rules and prior
 Important limitations include:
 
 - synthetic trait distributions are not automatically representative of a real population;
-- semantic coefficients and price anchors are modelling assumptions;
+- V3 region/city/locality IDs are abstract structural cohorts, not validated real geography;
+- household, workplace, education, and online groups represent contacts present in the simulated sample rather than complete real households, employers, institutions, or communities;
+- social-layer priors, contact budgets, semantic coefficients, and price anchors are modelling assumptions;
 - generated dialogue is not evidence that a real consumer would say the same thing;
 - Full Live language rendering does not make the underlying numerical model more empirically valid;
 - provider-generated wording can vary even when numerical state is deterministic;
@@ -766,9 +820,9 @@ Natural extension areas include:
 - saved simulations and comparison workflows;
 - durable background-job infrastructure;
 - persistent projects and authentication;
-- richer network exploration;
+- richer network-layer exploration and filtering;
 - product document/image ingestion;
-- configurable geographic or demographic population models;
+- empirically calibrated or externally supplied geographic/demographic population models to replace the current abstract synthetic geography when real source data is available;
 - scenario comparison and experiment management;
 - external validation against surveys, experiments, and observed market behaviour.
 

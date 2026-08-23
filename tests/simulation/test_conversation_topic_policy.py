@@ -67,6 +67,28 @@ def test_selection_is_deterministic_for_same_rng_seed_and_preserves_speaker_stan
     assert stance == speaker.state.beliefs.as_dict()[topic]
 
 
+def test_direct_reply_boosts_a_contested_topic_instead_of_forcing_a_subject_change():
+    speaker, listener = _agents()
+    speaker.state.beliefs = ProductBeliefs(price=-0.75, usefulness=0.20, quality=0.15, trust=0.10, novelty=0.10, privacy=-0.10)
+    listener.state.beliefs = ProductBeliefs(price=0.70, usefulness=0.20, quality=0.15, trust=0.10, novelty=0.10, privacy=-0.10)
+
+    repeated_only = score_conversation_topics(
+        speaker,
+        listener,
+        recent_topics=("price",),
+    )
+    replying = score_conversation_topics(
+        speaker,
+        listener,
+        recent_topics=("price",),
+        reply_to_topic="price",
+        reply_to_stance=0.70,
+    )
+
+    assert replying["price"] > repeated_only["price"]
+    assert replying["price"] == max(replying.values())
+
+
 def test_recent_topic_history_softly_penalizes_repetition_without_blacklisting():
     speaker, listener = _agents()
     speaker.state.beliefs = ProductBeliefs(price=-0.45, usefulness=0.42, quality=0.25, trust=-0.30, novelty=0.30, privacy=-0.35)

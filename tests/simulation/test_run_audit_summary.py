@@ -44,6 +44,16 @@ def test_markdown_summary_contains_required_debugging_sections(tmp_path):
             "conversation_count": 7,
             "final_mean_opinion": 0.12,
             "final_mean_purchase_intent": 0.55,
+            "analytics": {
+                "opinion_diagnostics": {
+                    "below_zero_share": 0.28,
+                    "strong_negative_share": 0.10,
+                    "minimum": -0.42,
+                    "median": 0.08,
+                    "maximum": 0.61,
+                    "strong_negative_threshold": -0.20,
+                }
+            },
         },
         warnings=("Provider returned one HTTP error.",),
     )
@@ -67,6 +77,11 @@ def test_markdown_summary_contains_required_debugging_sections(tmp_path):
     assert "model-x" in text
     assert "language.render.fallback" in text
     assert "Provider returned one HTTP error." in text
+    assert "## Opinion diagnostics" in text
+    assert "Below-zero share" in text
+    assert "`0.2800`" in text
+    assert "Strong-negative cutoff" in text
+    assert "`-0.2000`" in text
     assert "canonical event-by-event trace" in text
 
 

@@ -117,6 +117,18 @@ _PRIVACY_RISK = {
     "tracking": 0.16,
     "continuously tracks": 0.34,
 }
+_SENSITIVE_DATA = {
+    "bank account": 0.38,
+    "bank accounts": 0.38,
+    "transaction history": 0.38,
+    "financial records": 0.42,
+    "financial data": 0.42,
+    "spending data": 0.30,
+    "account aggregation": 0.28,
+    "health data": 0.36,
+    "biometric": 0.34,
+    "precise location": 0.30,
+}
 _PRIVACY_PROTECTIVE = {
     "runs locally": 0.34,
     "local processing": 0.32,
@@ -260,6 +272,7 @@ def build_product_semantic_profile(
     base_support = _signed_signal(text, _SUPPORT_POSITIVE, _SUPPORT_NEGATIVE)
     novelty = _positive_signal(text, _NOVELTY_POSITIVE)
     privacy_risk = _positive_signal(text, _PRIVACY_RISK)
+    sensitive_data = _positive_signal(text, _SENSITIVE_DATA)
     privacy_protection = _positive_signal(text, _PRIVACY_PROTECTIVE)
     complexity = _clip01(_positive_signal(text, _COMPLEXITY))
     recurring = _clip01(
@@ -287,6 +300,7 @@ def build_product_semantic_profile(
     privacy_exposure = _clip01(
         0.10
         + privacy_risk
+        + 0.55 * sensitive_data
         + 0.65 * data_practice_risk
         - 0.85 * privacy_protection
     )

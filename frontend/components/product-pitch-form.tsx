@@ -9,6 +9,11 @@ import { LedStatus } from "@/components/industrial/led-status";
 import { PanelDetails } from "@/components/industrial/panel-details";
 import { runSimulation, startFullLiveSimulation } from "@/lib/api";
 import {
+  DEFAULT_PRODUCT_PRESET_ID,
+  PRODUCT_PRESETS,
+  getProductPreset,
+} from "@/lib/product-presets";
+import {
   MAX_SIMULATION_WORKLOAD,
   advancedValuesFromPreset,
   buildAdvancedConfig,
@@ -25,8 +30,9 @@ import {
   type PopulationMode,
 } from "@/types/simulation";
 
-const DEFAULT_PITCH =
-  "An AI-powered fitness coach that creates personalized workout plans, nutrition guidance, and progress tracking for one monthly subscription.";
+const DEFAULT_PRODUCT = PRODUCT_PRESETS.find(
+  (preset) => preset.id === DEFAULT_PRODUCT_PRESET_ID,
+) ?? PRODUCT_PRESETS[0];
 
 function billingAutoHint(pitch: string, category: string): string {
   const text = `${category} ${pitch}`.toLowerCase();
@@ -51,11 +57,12 @@ const DIALOGUE_DESCRIPTIONS: Record<DialogueMode, string> = {
 
 export function ProductPitchForm() {
   const router = useRouter();
-  const [name, setName] = useState("AI Fitness Coach");
-  const [category, setCategory] = useState("Fitness Technology");
-  const [pitch, setPitch] = useState(DEFAULT_PITCH);
-  const [price, setPrice] = useState("999");
-  const [billingCadence, setBillingCadence] = useState<BillingCadence>("auto");
+  const [selectedPresetId, setSelectedPresetId] = useState(DEFAULT_PRODUCT.id);
+  const [name, setName] = useState(DEFAULT_PRODUCT.name);
+  const [category, setCategory] = useState(DEFAULT_PRODUCT.category);
+  const [pitch, setPitch] = useState(DEFAULT_PRODUCT.pitch);
+  const [price, setPrice] = useState(String(DEFAULT_PRODUCT.price));
+  const [billingCadence, setBillingCadence] = useState<BillingCadence>(DEFAULT_PRODUCT.billingCadence);
   const [populationMode, setPopulationMode] = useState<PopulationMode>("standard");
   const [dialogueMode, setDialogueMode] = useState<DialogueMode>("balanced");
   const [rounds, setRounds] = useState(20);
@@ -86,6 +93,26 @@ export function ProductPitchForm() {
       || advancedValidationError
       || (dialogueMode === "full_live" && !fullLiveSelection),
   );
+
+  function markProductAsCustom() {
+    setSelectedPresetId("custom");
+  }
+
+  function handleProductPresetChange(nextPresetId: string) {
+    setError(null);
+    if (nextPresetId === "custom") {
+      setSelectedPresetId("custom");
+      return;
+    }
+    const preset = getProductPreset(nextPresetId);
+    if (!preset) return;
+    setSelectedPresetId(preset.id);
+    setName(preset.name);
+    setCategory(preset.category);
+    setPitch(preset.pitch);
+    setPrice(String(preset.price));
+    setBillingCadence(preset.billingCadence);
+  }
 
   function handlePopulationChange(nextMode: PopulationMode) {
     setPopulationMode(nextMode);
@@ -236,19 +263,43 @@ export function ProductPitchForm() {
         </div>
 
         <div className="formGrid">
+          <div className="field full productPresetField">
+            <label htmlFor="product-preset">Product scenario</label>
+            <select
+              id="product-preset"
+              value={selectedPresetId}
+              onChange={(event) => handleProductPresetChange(event.target.value)}
+            >
+              <option value="custom">Custom / edited product</option>
+              {PRODUCT_PRESETS.map((preset) => (
+                <option key={preset.id} value={preset.id}>
+                  {preset.name} — {preset.scenarioLabel}
+                </option>
+              ))}
+            </select>
+            <span className="muted">
+              {selectedPresetId === "custom"
+                ? "Custom mode — edit the product fields and long-form brief directly."
+                : getProductPreset(selectedPresetId)?.summary}
+            </span>
+            <span className="productPresetNote">
+              Five synthetic product briefs cover different categories and evidence profiles, including one deliberate reliability/safety stress test. Every field remains editable.
+            </span>
+          </div>
+
           <div className="field">
             <label htmlFor="product-name">Product name</label>
-            <input id="product-name" value={name} onChange={(event) => setName(event.target.value)} required />
+            <input id="product-name" value={name} onChange={(event) => { setName(event.target.value); markProductAsCustom(); }} required />
           </div>
 
           <div className="field">
             <label htmlFor="category">Category</label>
-            <input id="category" value={category} onChange={(event) => setCategory(event.target.value)} />
+            <input id="category" value={category} onChange={(event) => { setCategory(event.target.value); markProductAsCustom(); }} />
           </div>
 
           <div className="field">
             <label htmlFor="price">Price / INR</label>
-            <input id="price" type="number" min="0" step="0.01" value={price} onChange={(event) => setPrice(event.target.value)} />
+            <input id="price" type="number" min="0" step="0.01" value={price} onChange={(event) => { setPrice(event.target.value); markProductAsCustom(); }} />
           </div>
 
           {price.trim() !== "" ? (
@@ -257,7 +308,7 @@ export function ProductPitchForm() {
               <select
                 id="billing-cadence"
                 value={billingCadence}
-                onChange={(event) => setBillingCadence(event.target.value as BillingCadence)}
+                onChange={(event) => { setBillingCadence(event.target.value as BillingCadence); markProductAsCustom(); }}
               >
                 <option value="auto">Auto</option>
                 <option value="one_time">One-time</option>
@@ -274,7 +325,7 @@ export function ProductPitchForm() {
 
           <div className="field full">
             <label htmlFor="pitch">Product pitch</label>
-            <textarea id="pitch" value={pitch} onChange={(event) => setPitch(event.target.value)} minLength={10} required />
+            <textarea id="pitch" value={pitch} onChange={(event) => { setPitch(event.target.value); markProductAsCustom(); }} minLength={10} required />
             <span className="muted mono">{pitch.length.toLocaleString()} / 12,000 characters</span>
           </div>
 

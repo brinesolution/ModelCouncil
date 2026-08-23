@@ -35,6 +35,8 @@ _INTERNAL_TERMS = (
     "agent traits",
     "social susceptibility",
     "risk tolerance score",
+    "purchase intent",
+    "decision disposition",
 )
 _SPEAKER_ARTIFACT_RE = re.compile(r"(?:^|\s)(?:a\s*\|\s*b|b\s*\|\s*a|agent\s+[ab])\s*:", re.IGNORECASE)
 _DEMOGRAPHIC_AFFORDABILITY_RE = re.compile(

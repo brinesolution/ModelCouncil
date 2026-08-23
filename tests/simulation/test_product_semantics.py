@@ -62,6 +62,22 @@ def test_reliable_supportive_pitch_scores_above_unreliable_poor_support_pitch():
     assert bad.claim_uncertainty > good.claim_uncertainty
 
 
+def test_financial_account_and_transaction_data_are_inherently_privacy_sensitive():
+    profile = build_product_semantic_profile(
+        _product(
+            category="Personal Finance Software",
+            pitch=(
+                "Budgeting app that connects bank accounts, imports transaction history, processes financial records, "
+                "and stores spending data with encryption, self-service deletion, and no advertising use."
+            ),
+            price=399,
+        )
+    )
+
+    assert profile.privacy_exposure >= 0.45
+    assert profile.data_practice_risk <= 0.10
+
+
 def test_privacy_heavy_tracking_scores_more_exposed_than_local_offline_pitch():
     tracking = build_product_semantic_profile(
         _product(

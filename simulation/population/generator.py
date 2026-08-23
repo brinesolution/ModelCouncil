@@ -30,6 +30,7 @@ from simulation.population.sampling import (
     sample_weighted,
     sample_with_soft_preference,
 )
+from simulation.population.social_memberships import assign_social_memberships
 from simulation.population.trait_repository import TraitCatalog, TraitRepository, TraitValue
 from simulation.audit.logger import RunAuditSink
 
@@ -62,13 +63,17 @@ def generate_population(
 
     rng = np.random.default_rng(seed)
     if traits is None:
-        return _generate_bootstrap_population(size=size, rng=rng, audit=audit)
-    load_catalog = traits.load_catalog
-    if audit is not None and "audit" in inspect.signature(load_catalog).parameters:
-        catalog = load_catalog(audit=audit)
+        agents = _generate_bootstrap_population(size=size, rng=rng, audit=audit)
     else:
-        catalog = load_catalog()
-    return _generate_catalog_population(size=size, rng=rng, catalog=catalog, audit=audit)
+        load_catalog = traits.load_catalog
+        if audit is not None and "audit" in inspect.signature(load_catalog).parameters:
+            catalog = load_catalog(audit=audit)
+        else:
+            catalog = load_catalog()
+        agents = _generate_catalog_population(size=size, rng=rng, catalog=catalog, audit=audit)
+
+    assign_social_memberships(agents, seed=seed, audit=audit)
+    return agents
 
 
 def _generate_catalog_population(

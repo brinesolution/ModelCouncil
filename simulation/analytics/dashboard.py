@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass
+from statistics import median
 
 from simulation.engine import SimulationResult
 
@@ -23,6 +24,16 @@ class PurchaseIntentDistribution:
 
 
 @dataclass(frozen=True, slots=True)
+class OpinionDiagnostics:
+    below_zero_share: float
+    strong_negative_share: float
+    minimum: float
+    median: float
+    maximum: float
+    strong_negative_threshold: float = -0.20
+
+
+@dataclass(frozen=True, slots=True)
 class TopicPressurePoint:
     topic: str
     raw_score: float
@@ -37,11 +48,13 @@ class TopicPressurePoint:
 @dataclass(frozen=True, slots=True)
 class DashboardAnalytics:
     purchase_intent_distribution: PurchaseIntentDistribution
+    opinion_diagnostics: OpinionDiagnostics
     topic_pressure: tuple[TopicPressurePoint, ...]
 
 
 def build_dashboard_analytics(result: SimulationResult) -> DashboardAnalytics:
     purchases = [agent.state.purchase_intent for agent in result.population]
+    opinions = [agent.state.overall_opinion for agent in result.population]
     low = sum(value < 0.35 for value in purchases)
     medium = sum(0.35 <= value <= 0.70 for value in purchases)
     high = sum(value > 0.70 for value in purchases)
@@ -88,11 +101,29 @@ def build_dashboard_analytics(result: SimulationResult) -> DashboardAnalytics:
         for topic in CANONICAL_TOPICS
     )
 
+    population_size = len(opinions)
+    opinion_diagnostics = OpinionDiagnostics(
+        below_zero_share=(
+            sum(value < 0.0 for value in opinions) / population_size
+            if population_size
+            else 0.0
+        ),
+        strong_negative_share=(
+            sum(value < -0.20 for value in opinions) / population_size
+            if population_size
+            else 0.0
+        ),
+        minimum=min(opinions, default=0.0),
+        median=float(median(opinions)) if opinions else 0.0,
+        maximum=max(opinions, default=0.0),
+    )
+
     return DashboardAnalytics(
         purchase_intent_distribution=PurchaseIntentDistribution(
             low=low,
             medium=medium,
             high=high,
         ),
+        opinion_diagnostics=opinion_diagnostics,
         topic_pressure=topic_pressure,
     )

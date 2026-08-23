@@ -22,14 +22,16 @@ def _edge_score_components(
 ) -> tuple[float, dict[str, float]]:
     similarity = float(edge.get("similarity", 0.0))
     relationship = float(edge.get("relationship_strength", 0.0))
+    interaction_opportunity = float(edge.get("interaction_opportunity", 0.50))
     salience = (source.state.product_salience + target.state.product_salience) / 2
     sociability = (source.traits.sociability + target.traits.sociability) / 2
     opinion_gap = abs(source.state.overall_opinion - target.state.overall_opinion) / 2.0
     components = {
-        "similarity": 0.30 * similarity,
-        "relationship": 0.25 * relationship,
-        "salience": 0.25 * salience,
-        "sociability": 0.20 * sociability,
+        "similarity": 0.18 * similarity,
+        "relationship": 0.24 * relationship,
+        "interaction_opportunity": 0.18 * interaction_opportunity,
+        "salience": 0.22 * salience,
+        "sociability": 0.18 * sociability,
         "informational_difference": dynamics.disagreement_information_weight * opinion_gap,
     }
     return sum(components.values()), components
@@ -161,6 +163,9 @@ def schedule_conversations(
                         "candidate_weight": score,
                         "similarity": float(edge.get("similarity", 0.0)),
                         "relationship_strength": float(edge.get("relationship_strength", 0.0)),
+                        "interaction_opportunity": float(edge.get("interaction_opportunity", 0.50)),
+                        "primary_layer": edge.get("primary_layer"),
+                        "social_layers": tuple(edge.get("social_layers", ())),
                         "trust": float(edge.get("trust", 0.0)),
                         "weak_tie": bool(edge.get("weak_tie", False)),
                     }

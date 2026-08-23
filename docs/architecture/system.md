@@ -17,8 +17,8 @@ Next.js frontend :3000
 FastAPI backend :8000
   |
   +--> Simulation engine
-  |      +--> population
-  |      +--> KNN/social graph
+  |      +--> population + persistent social memberships
+  |      +--> layered/multiplex social graph
   |      +--> conversation scheduler
   |      +--> opinion dynamics
   |      +--> purchase model
@@ -48,6 +48,8 @@ Owns all domain rules. It does not import web frameworks. Tests must be able to 
 ### Data
 
 Excel trait workbooks are editable input/configuration. They are loaded through an explicit repository layer so spreadsheet layout is not coupled to behavioural code.
+
+After individual traits are sampled, the population layer performs a deterministic second pass that assigns abstract synthetic region/city/locality structure plus household, workplace, education, and online-interest memberships. These relational memberships are generated from the population as a whole and are intentionally separate from active product state.
 
 ## Secret flow
 
@@ -93,6 +95,18 @@ POST simulation -> job id -> worker -> checkpoints/results
 ```
 
 Do not introduce Redis/queues before this is demonstrated as necessary.
+
+## Social topology — V3
+
+The persistent network is a single multiplex NetworkX graph. Edges can carry several `social_layers` at once—for example household + local, or workplace + online—and retain a `primary_layer`, per-layer strengths, interaction opportunity, directional trust, and interaction history.
+
+Large membership groups are not cliques. Household cohorts are small enough to connect directly; workplace, education, local, and online layers have hard per-agent contact caps. Affinity KNN fills remaining target social degree, after which bounded triadic closure and structured weak bridges are added.
+
+`K` is a candidate/fill scale rather than a literal friend count. Product salience and disagreement do not form the persistent network; they affect which existing edges become active conversations.
+
+Geographic identifiers are abstract synthetic cohorts rather than real named places unless future empirical geography is supplied.
+
+The current V3 calibration keeps the graph fully connected at 250, 1,000, and 5,000 agents while preserving heterogeneous degree and explicit household/workplace/local/education/online pathways. At 1,000 agents the representative median degree is 15, weak edges are about 4.8% of the graph, and 37.4% of edges carry more than one social layer. These are engineering calibration measurements rather than claims about empirical social-network distributions.
 
 ## Large population UI
 

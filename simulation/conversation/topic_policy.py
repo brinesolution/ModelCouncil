@@ -14,6 +14,8 @@ def _score_conversation_topic_details(
     listener: ConsumerAgent,
     *,
     recent_topics: tuple[str, ...] = (),
+    reply_to_topic: str | None = None,
+    reply_to_stance: float | None = None,
 ) -> tuple[dict[str, float], dict[str, dict[str, float]]]:
     speaker_beliefs = speaker.state.beliefs.as_dict()
     listener_beliefs = listener.state.beliefs.as_dict()
@@ -27,11 +29,17 @@ def _score_conversation_topic_details(
         disagreement = abs(stance - listener_stance) / 2.0
         relevance = _topic_relevance(topic, speaker, listener)
         objection = max(0.0, -stance) * (0.55 + 0.45 * relevance)
+        reply_disagreement = (
+            abs(stance - float(reply_to_stance)) / 2.0
+            if topic == reply_to_topic and reply_to_stance is not None
+            else 0.0
+        )
         components = {
             "salience": 0.28 * salience,
             "disagreement": 0.34 * disagreement,
             "relevance": 0.22 * relevance,
             "objection": 0.16 * objection,
+            "direct_reply": 0.26 * reply_disagreement,
         }
         raw_score = sum(components.values())
         repeat_count = recent_topics[-4:].count(topic)
@@ -55,11 +63,15 @@ def score_conversation_topics(
     listener: ConsumerAgent,
     *,
     recent_topics: tuple[str, ...] = (),
+    reply_to_topic: str | None = None,
+    reply_to_stance: float | None = None,
 ) -> dict[str, float]:
     scores, _ = _score_conversation_topic_details(
         speaker,
         listener,
         recent_topics=recent_topics,
+        reply_to_topic=reply_to_topic,
+        reply_to_stance=reply_to_stance,
     )
     return scores
 
@@ -70,6 +82,8 @@ def select_conversation_topic(
     rng: np.random.Generator,
     *,
     recent_topics: tuple[str, ...] = (),
+    reply_to_topic: str | None = None,
+    reply_to_stance: float | None = None,
     audit: RunAuditSink | None = None,
     round_index: int | None = None,
     conversation_id: str | None = None,
@@ -78,6 +92,8 @@ def select_conversation_topic(
         speaker,
         listener,
         recent_topics=recent_topics,
+        reply_to_topic=reply_to_topic,
+        reply_to_stance=reply_to_stance,
     )
     topics = list(_TOPICS)
     weights = np.asarray([scores[topic] for topic in topics], dtype=float)
@@ -96,6 +112,8 @@ def select_conversation_topic(
                 "speaker_id": speaker.agent_id,
                 "listener_id": listener.agent_id,
                 "recent_topics": recent_topics,
+                "reply_to_topic": reply_to_topic,
+                "reply_to_stance": reply_to_stance,
                 "topic_scores": scores,
                 "score_components": score_components,
                 "jitter_multipliers": {

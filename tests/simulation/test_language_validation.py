@@ -41,6 +41,7 @@ def test_rejects_internal_state_leakage():
         "The argument strength is 0.68 and my confidence score is high.",
         "The price context shows a strong negative stance.",
         "My technology adoption and brand loyalty are both high.",
+        "My purchase intent is low, so my decision disposition is pass.",
     ):
         result = _validate(text)
         assert not result.valid

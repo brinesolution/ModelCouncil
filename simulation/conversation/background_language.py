@@ -255,6 +255,27 @@ _PRICE_TEMPLATES: dict[str, tuple[str, ...]] = {
 }
 
 
+_REPLY_DISAGREEMENT = (
+    "I see that differently.",
+    "That's where I disagree.",
+    "I don't see that the same way.",
+    "I'm not convinced by that.",
+)
+
+_REPLY_AGREEMENT = (
+    "That is also my concern.",
+    "I am with you on that point.",
+    "I see that much the same way.",
+    "Yes, that part stands out to me too.",
+)
+
+_REPLY_TRANSITION = (
+    "That is one part of it.",
+    "I would add another concern.",
+    "There is another side I am weighing.",
+    "I am also thinking about a different part of it.",
+)
+
 _SHAPE_FOLLOW_UP = {
     DialogueShape.agreement: "I can see why someone with similar priorities would land in a similar place.",
     DialogueShape.partial_agreement: "I agree with part of the case, though I would still weigh the details differently.",
@@ -264,6 +285,115 @@ _SHAPE_FOLLOW_UP = {
     DialogueShape.uncertainty: "I would want a bit more evidence before settling on it.",
     DialogueShape.priority_comparison: "That matters to me, but it is not the only thing I would base the decision on.",
 }
+
+_SEMANTIC_OPENERS = (
+    "",
+    "At this point, ",
+    "Right now, ",
+    "For me, ",
+    "Based on what I know, ",
+    "As I weigh it, ",
+    "My current read is that ",
+    "The way I see it, ",
+    "On balance, ",
+    "So far, ",
+    "For this decision, ",
+    "From where I stand, ",
+    "Looking at that part alone, ",
+    "When I focus on that point, ",
+    "My reaction for now is that ",
+    "Taking the product as described, ",
+)
+
+_MEASURED_CLOSERS = (
+    "",
+    "That is where I am landing for now.",
+    "I could still move if clearer evidence changes the picture.",
+    "It is one part of the decision rather than the whole decision.",
+    "I would keep weighing that against the rest of the product.",
+    "I am not treating that point as settled forever.",
+    "That view could strengthen or weaken with more concrete information.",
+    "I would want the rest of the product to support that impression.",
+    "That is my current position rather than a final verdict.",
+    "I would still compare that concern with the practical benefits.",
+    "I am keeping some room to revise that view.",
+    "That factor matters, but it does not decide everything by itself.",
+)
+
+_LOW_CONFIDENCE_CLOSERS = (
+    "",
+    "I would want more evidence before treating that as settled.",
+    "My view could change quite a bit with clearer information.",
+    "I am leaving plenty of room to revise that judgment.",
+    "That is only a tentative read for me.",
+    "I would need more concrete information before relying on that view.",
+    "I am not confident enough to make that point decisive yet.",
+    "I would keep this as an open question for now.",
+    "There is still enough uncertainty that I would revisit it.",
+    "I would rather verify that point before leaning on it heavily.",
+    "That impression is still provisional for me.",
+    "I would hold that view lightly until I know more.",
+)
+
+_HIGH_CONFIDENCE_CLOSERS = (
+    "",
+    "That factor carries meaningful weight in my decision.",
+    "I feel fairly settled on that point at the moment.",
+    "That is one of the clearer parts of my current view.",
+    "I would need meaningful new evidence to move far from that position.",
+    "That impression is relatively firm for me right now.",
+    "I am giving that factor real weight in the overall decision.",
+    "That point feels clearer to me than several of the other trade-offs.",
+    "I am reasonably confident in that part of my assessment.",
+    "That is a fairly stable part of my current judgment.",
+    "I would still listen to new evidence, but I have a clear leaning there.",
+    "That factor is unlikely to be neutral for me in the final decision.",
+)
+
+
+def _semantic_fallback(
+    *,
+    topic: str,
+    stance: float,
+    rng: object,
+    confidence: float,
+    style: SpeakingStyle,
+    selector_key: str,
+) -> str:
+    """Compose deterministic, fact-bounded semantic wording.
+
+    ``rng`` remains in the compatibility signature because callers historically
+    supplied one, but wording selection is intentionally keyed only by
+    ``selector_key`` so rendering never depends on mutable RNG order.
+    """
+    del rng
+    band = stance_band(stance)
+    topic_templates = _TOPIC_TEMPLATES.get(topic)
+    core_choices = (
+        topic_templates.get(band, _generic_templates(band))
+        if topic_templates is not None
+        else _generic_templates(band)
+    )
+    core = core_choices[_selector_index(selector_key, "core", len(core_choices))]
+    # "review" is reserved by the language contract for external product-review
+    # claims; use "check" when a template merely means inspecting product details.
+    core = core.replace("review", "check")
+    opener = _SEMANTIC_OPENERS[_selector_index(selector_key, "opener", len(_SEMANTIC_OPENERS))]
+
+    if style.detail == "concise":
+        closer = ""
+    else:
+        closer_pool = (
+            _LOW_CONFIDENCE_CLOSERS
+            if confidence < 0.40
+            else _HIGH_CONFIDENCE_CLOSERS
+            if confidence > 0.72
+            else _MEASURED_CLOSERS
+        )
+        closer = closer_pool[_selector_index(selector_key, "closer", len(closer_pool))]
+
+    composed = f"{opener}{core}"
+    return f"{composed} {closer}" if closer else composed
 
 
 def render_background_text(
@@ -276,6 +406,9 @@ def render_background_text(
     dialogue_shape: DialogueShape = DialogueShape.uncertainty,
     speaking_style: SpeakingStyle | None = None,
     price_context: ConsumerPriceContext | None = None,
+    decision_emphasis: bool = False,
+    reply_to_topic: str | None = None,
+    reply_to_stance: float | None = None,
 ) -> str:
     """Render deterministic wording after semantic stance is fixed.
 
@@ -294,21 +427,95 @@ def render_background_text(
             shape=dialogue_shape,
         )
     else:
-        templates = _TOPIC_TEMPLATES.get(topic, _generic_templates(band))
-        choices = templates.get(band, _generic_templates(band)) if isinstance(templates, dict) else templates
-        base = choices[
-            _stable_index(
-                conversation_id,
-                speaker.agent_id,
-                listener.agent_id,
-                f"{topic}:{band}:{dialogue_shape.value}",
-                len(choices),
-            )
-        ]
+        base = _semantic_fallback(
+            topic=topic,
+            stance=stance,
+            rng=None,
+            confidence=speaker.state.confidence,
+            style=style,
+            selector_key=(
+                f"{conversation_id}:{speaker.agent_id}:{listener.agent_id}:"
+                f"{topic}:{dialogue_shape.value}"
+            ),
+        )
 
+    reply_prefix = _reply_prefix(
+        topic=topic,
+        stance=stance,
+        reply_to_topic=reply_to_topic,
+        reply_to_stance=reply_to_stance,
+        selector_key=conversation_id,
+    )
+    if reply_prefix:
+        base = f"{reply_prefix} {base}"
     if _should_elaborate(style, conversation_id, speaker.agent_id, topic):
-        return f"{base} {_SHAPE_FOLLOW_UP[dialogue_shape]}"
+        base = f"{base} {_SHAPE_FOLLOW_UP[dialogue_shape]}"
+    if decision_emphasis:
+        decision = _purchase_decision_closer(speaker, conversation_id)
+        if decision:
+            base = f"{base} {decision}"
     return base
+
+
+def _reply_prefix(
+    *,
+    topic: str,
+    stance: float,
+    reply_to_topic: str | None,
+    reply_to_stance: float | None,
+    selector_key: str,
+) -> str:
+    if reply_to_topic is None or reply_to_stance is None:
+        return ""
+    if topic == reply_to_topic:
+        same_direction = stance * reply_to_stance > 0
+        both_material = abs(stance) >= 0.12 and abs(reply_to_stance) >= 0.12
+        if both_material and not same_direction:
+            choices = _REPLY_DISAGREEMENT
+        elif both_material and same_direction:
+            choices = _REPLY_AGREEMENT
+        else:
+            return ""
+        return choices[_selector_index(selector_key, "reply-prefix", len(choices))]
+
+    if abs(reply_to_stance) >= 0.35:
+        choices = _REPLY_TRANSITION
+        return choices[_selector_index(selector_key, "reply-transition", len(choices))]
+    return ""
+
+
+_PASS_DECISIONS = (
+    "As things stand, I would not buy it.",
+    "At the moment, I would pass on this product.",
+    "For now, I am not buying it.",
+    "Given those concerns, I would walk away for now.",
+)
+
+_LEAN_PASS_DECISIONS = (
+    "Overall, I am leaning toward not buying it.",
+    "That leaves me more likely to pass than to buy right now.",
+    "I would probably hold off rather than purchase it at this point.",
+)
+
+_CONSIDER_DECISIONS = (
+    "Overall, I would seriously consider buying it.",
+    "That leaves me fairly willing to consider a purchase.",
+    "On balance, I would keep this on my shortlist to buy.",
+)
+
+
+def _purchase_decision_closer(speaker: ConsumerAgent, selector_key: str) -> str:
+    purchase = speaker.state.purchase_intent
+    opinion = speaker.state.overall_opinion
+    if purchase <= 0.22 or (purchase <= 0.30 and opinion <= -0.20):
+        choices = _PASS_DECISIONS
+    elif purchase <= 0.40 and opinion < 0.0:
+        choices = _LEAN_PASS_DECISIONS
+    elif purchase >= 0.78 and opinion >= 0.20:
+        choices = _CONSIDER_DECISIONS
+    else:
+        return ""
+    return choices[_selector_index(selector_key, "purchase-decision", len(choices))]
 
 
 def _price_text(
@@ -390,6 +597,14 @@ def _should_elaborate(
     if style.detail == "elaborative":
         return True
     return bool(_stable_index(conversation_id, speaker_id, speaker_id, topic, 2))
+
+
+def _selector_index(selector_key: str, salt: str, size: int) -> int:
+    digest = hashlib.blake2b(
+        f"{selector_key}:{salt}".encode("utf-8"),
+        digest_size=4,
+    ).digest()
+    return int.from_bytes(digest, "big") % size
 
 
 def _stable_index(

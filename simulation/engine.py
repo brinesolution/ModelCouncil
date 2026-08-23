@@ -2,12 +2,17 @@ from __future__ import annotations
 
 from collections import defaultdict
 from copy import deepcopy
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 
 import networkx as nx
 
+from simulation.analytics.network_distribution import (
+    NetworkDistributionMetrics,
+    compute_network_distribution_metrics,
+)
 from simulation.analytics.social_dynamics import compute_social_dynamics_metrics
 from simulation.behaviour.purchase import derive_purchase_intent
+from simulation.conversation.discussion_policy import discussion_turn_novelty
 from simulation.conversation.ledger import (
     ConversationLanguageContext,
     ConversationLedgerEntry,
@@ -16,6 +21,7 @@ from simulation.conversation.router import ConversationContext, ConversationRout
 from simulation.conversation.scheduler import schedule_conversations
 from simulation.domain.agent import ConsumerAgent, clamp01
 from simulation.network.knn_graph import build_knn_graph
+from simulation.network.social_topology import edge_trust, update_relationship_after_conversation
 from simulation.opinion.aggregator import TopicEvidence, aggregate_round_evidence
 from simulation.opinion.dynamics_config import (
     DEFAULT_INFLUENCE_DYNAMICS,
@@ -92,6 +98,7 @@ class SimulationResult:
     population: list[ConsumerAgent]
     graph: nx.Graph
     timeline: list[TimelinePoint]
+    network_metrics: NetworkDistributionMetrics | None = None
     conversations: list[ConversationLedgerEntry] = field(default_factory=list)
     checkpoints: list[RoundCheckpoint] = field(default_factory=list)
 
@@ -165,6 +172,12 @@ class SimulationEngine:
             seed=config.seed,
             audit=audit,
         )
+        initial_network_metrics = compute_network_distribution_metrics(graph)
+        if audit is not None:
+            audit.emit(
+                "network.distribution",
+                {"stage": "initial", "metrics": asdict(initial_network_metrics)},
+            )
 
         timeline = [self._timeline_point(0, agents, 0)]
         conversation_ledger: list[ConversationLedgerEntry] = []
@@ -243,7 +256,7 @@ class SimulationEngine:
                 interaction_counts[pair.agent_b_id] += 1
                 self._record_graph_interaction(graph, pair.agent_a_id, pair.agent_b_id, round_index)
 
-                for message in result.messages:
+                for turn_index, message in enumerate(result.messages):
                     speaker = context.snapshot[message.speaker_id]
                     for topic, stance in message.topic_effects.items():
                         round_topic_records.append(
@@ -253,14 +266,14 @@ class SimulationEngine:
                             topic=topic,
                             stance=stance,
                             argument_strength=message.argument_strength,
-                            trust=float(edge.get("trust", 0.4)),
+                            trust=edge_trust(edge, message.listener_id),
                             relationship_strength=float(
                                 edge.get("relationship_strength", 0.4)
                             ),
                             similarity=float(edge.get("similarity", 0.3)),
                             speaker_confidence=message.confidence,
                             speaker_knowledge=speaker.state.knowledge,
-                            novelty=1.0,
+                            novelty=discussion_turn_novelty(turn_index),
                         )
                         evidence_by_listener[message.listener_id].append(topic_evidence)
                         if audit is not None:
@@ -275,6 +288,13 @@ class SimulationEngine:
                                 conversation_id=pair.conversation_id,
                                 agent_ids=[message.speaker_id, message.listener_id],
                             )
+
+                update_relationship_after_conversation(
+                    graph,
+                    pair,
+                    result,
+                    context.snapshot,
+                )
 
             self._commit_topic_history(
                 recent_topics_by_agent,
@@ -319,7 +339,12 @@ class SimulationEngine:
                     round_index=round_index,
                 )
 
+        final_network_metrics = compute_network_distribution_metrics(graph)
         if audit is not None:
+            audit.emit(
+                "network.distribution",
+                {"stage": "final", "metrics": asdict(final_network_metrics)},
+            )
             social_metrics = compute_social_dynamics_metrics(
                 initial_opinions,
                 agents,
@@ -346,6 +371,7 @@ class SimulationEngine:
             population=agents,
             graph=graph,
             timeline=timeline,
+            network_metrics=final_network_metrics,
             conversations=conversation_ledger,
             checkpoints=checkpoints,
         )

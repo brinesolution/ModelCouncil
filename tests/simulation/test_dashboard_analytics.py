@@ -39,6 +39,23 @@ def test_purchase_intent_distribution_partitions_full_population():
     assert distribution.high >= 0
 
 
+def test_opinion_diagnostics_distinguish_below_zero_from_strong_negative_share():
+    result = _result()
+    pattern = (-0.40, -0.10, 0.0, 0.10, 0.40)
+    for index, agent in enumerate(result.population):
+        agent.state.overall_opinion = pattern[index % len(pattern)]
+
+    analytics = build_dashboard_analytics(result)
+    diagnostics = analytics.opinion_diagnostics
+
+    assert diagnostics.below_zero_share == 0.40
+    assert diagnostics.strong_negative_share == 0.20
+    assert diagnostics.minimum == -0.40
+    assert diagnostics.median == 0.0
+    assert diagnostics.maximum == 0.40
+    assert diagnostics.strong_negative_threshold == -0.20
+
+
 def test_topic_pressure_emits_all_canonical_topics_and_normalizes_scores():
     analytics = build_dashboard_analytics(_result())
 

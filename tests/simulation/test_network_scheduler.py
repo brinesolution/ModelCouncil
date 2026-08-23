@@ -1,6 +1,6 @@
 from collections import Counter
 
-from simulation.conversation.scheduler import schedule_conversations
+from simulation.conversation.scheduler import _edge_score_components, schedule_conversations
 from simulation.network.knn_graph import build_knn_graph
 from simulation.population.generator import generate_population
 
@@ -30,3 +30,31 @@ def test_knn_graph_and_scheduler_respect_conversation_capacity() -> None:
 
     assert all(count <= 2 for count in counts.values())
     assert len(pairs) <= round(len(agents) * 0.20)
+
+
+def test_scheduler_scores_high_contact_layers_above_equivalent_low_contact_edges() -> None:
+    source, target = generate_population(2, seed=12)
+    source.state.product_salience = 0.6
+    target.state.product_salience = 0.6
+
+    high_score, high_components = _edge_score_components(
+        source,
+        target,
+        {
+            "similarity": 0.55,
+            "relationship_strength": 0.55,
+            "interaction_opportunity": 0.92,
+        },
+    )
+    low_score, low_components = _edge_score_components(
+        source,
+        target,
+        {
+            "similarity": 0.55,
+            "relationship_strength": 0.55,
+            "interaction_opportunity": 0.25,
+        },
+    )
+
+    assert high_components["interaction_opportunity"] > low_components["interaction_opportunity"]
+    assert high_score > low_score

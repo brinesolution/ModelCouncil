@@ -17,9 +17,47 @@ BELIEF_IMPORTANCE = {
 
 
 def derive_overall_opinion(agent: ConsumerAgent) -> float:
-    beliefs = agent.state.beliefs.as_dict()
-    weighted = sum(BELIEF_IMPORTANCE[name] * beliefs[name] for name in BELIEF_IMPORTANCE)
-    return clamp_opinion(weighted)
+    opinion, _, _, _ = _overall_opinion_calculation(agent)
+    return opinion
+
+
+def _overall_opinion_calculation(
+    agent: ConsumerAgent,
+) -> tuple[float, float, float, dict[str, float]]:
+    beliefs = agent.state.beliefs
+    weighted = sum(
+        BELIEF_IMPORTANCE[name] * value
+        for name, value in beliefs.as_dict().items()
+        if name in BELIEF_IMPORTANCE
+    )
+    objection_components = {
+        "price": max(0.0, -beliefs.price)
+        * (0.35 + 0.65 * agent.traits.price_sensitivity),
+        "usefulness": max(0.0, -beliefs.usefulness)
+        * (0.35 + 0.65 * agent.traits.product_need),
+        "quality": max(0.0, -beliefs.quality)
+        * (0.35 + 0.65 * agent.context.behaviour.quality_sensitivity),
+        "trust": max(0.0, -beliefs.trust)
+        * clamp01(
+            0.30
+            + 0.35 * (1.0 - agent.traits.risk_tolerance)
+            + 0.35 * agent.context.decision.evidence_requirement
+        ),
+        "privacy": max(0.0, -beliefs.privacy)
+        * clamp01(
+            0.30
+            + 0.35 * agent.context.technology.privacy_concern
+            + 0.35 * agent.context.emotion.security_preference
+        ),
+    }
+    strongest_objection = max(objection_components.values(), default=0.0)
+    objection_penalty = 0.45 * max(0.0, strongest_objection - 0.25)
+    return (
+        clamp_opinion(weighted - objection_penalty),
+        weighted,
+        objection_penalty,
+        objection_components,
+    )
 
 
 def derive_purchase_intent(
@@ -31,7 +69,9 @@ def derive_purchase_intent(
     phase: str | None = None,
 ) -> float:
     beliefs = agent.state.beliefs
-    opinion = derive_overall_opinion(agent)
+    opinion, weighted_opinion, objection_penalty, objection_components = (
+        _overall_opinion_calculation(agent)
+    )
     resolved = fit or _fallback_fit(agent)
 
     value_components = {
@@ -105,6 +145,11 @@ def derive_purchase_intent(
                 "beliefs": beliefs,
                 "fit": resolved,
                 "components": {
+                    "opinion": {
+                        "weighted_average": weighted_opinion,
+                        "objections": objection_components,
+                        "objection_penalty": objection_penalty,
+                    },
                     "value_signal": value_components,
                     "price_penalty": price_penalty_components,
                     "trust_penalty": trust_penalty_components,

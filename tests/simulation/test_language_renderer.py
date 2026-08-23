@@ -110,6 +110,7 @@ def test_agent_language_profile_contains_full_consumer_context():
     assert profile.product_need == agent.traits.product_need
     assert profile.risk_tolerance == agent.traits.risk_tolerance
     assert profile.brand_loyalty == agent.traits.brand_loyalty
+    assert profile.purchase_intent == agent.state.purchase_intent
 
 
 @pytest.mark.asyncio
@@ -135,7 +136,8 @@ async def test_llm_renderer_changes_language_without_changing_semantic_messages(
 
     assert outcome.result.messages == original_messages
     assert outcome.result.language_source == "deepseek"
-    assert len(outcome.result.transcript) == 2
+    assert len(outcome.result.transcript) == len(semantic.messages)
+    assert len(outcome.result.transcript) >= 4
     assert outcome.result.transcript[0]["speaker_id"] == pair.agent_a_id
     assert outcome.result.transcript[1]["speaker_id"] == pair.agent_b_id
     assert all(message["text"] for message in outcome.result.transcript)
@@ -225,6 +227,7 @@ async def test_llm_renderer_receives_bounded_product_context():
     assert '"affordability":' not in provider.user_prompt
     assert '"argument_band":' in provider.user_prompt
     assert '"knowledge_band":' in provider.user_prompt
+    assert '"decision_disposition":' in provider.user_prompt
     assert provider.json_schema["properties"]["conversation"]["minItems"] == len(semantic.messages)
     assert provider.json_schema["properties"]["conversation"]["maxItems"] == len(semantic.messages)
     assert len(provider.user_prompt) < 5000
@@ -353,14 +356,22 @@ async def test_llm_renderer_places_stable_contract_and_product_before_dynamic_co
 
 
 class SemanticContractViolatingProvider:
-    async def generate_json(self, **_kwargs):
+    async def generate_json(self, **kwargs):
+        import json
+
+        prompt = json.loads(kwargs["user_prompt"])
+        sequence = prompt["dynamic_conversation"]["expected_speaker_sequence"]
+        conversation = []
+        for index, speaker in enumerate(sequence):
+            if index == 0:
+                text = "My income score is 0.56, so this looks affordable."
+            elif index == 1:
+                text = "Have you checked the reviews on that?"
+            else:
+                text = "I am still weighing that part of the product."
+            conversation.append({"speaker": speaker, "text": text})
         return LLMJsonResponse(
-            data={
-                "conversation": [
-                    {"speaker": "A", "text": "My income score is 0.56, so this looks affordable."},
-                    {"speaker": "B", "text": "Have you checked the reviews on that?"},
-                ]
-            },
+            data={"conversation": conversation},
             usage=LLMUsage(
                 prompt_tokens=90,
                 prompt_cache_hit_tokens=0,
